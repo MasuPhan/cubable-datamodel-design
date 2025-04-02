@@ -8,6 +8,12 @@ export interface Field {
   required: boolean;
   unique: boolean;
   options?: Record<string, any>;
+  reference?: {
+    tableId: string;
+    isTwoWay: boolean;
+    isMultiple: boolean;
+    linkedFieldId?: string;
+  };
 }
 
 export interface Table {
@@ -22,8 +28,10 @@ export interface Relationship {
   sourceTableId: string;
   sourceFieldId: string;
   targetTableId: string;
-  targetFieldId: string;
+  targetFieldId?: string;
   type: 'oneToOne' | 'oneToMany' | 'manyToOne' | 'manyToMany';
+  isReference: boolean;
+  isTwoWay: boolean;
 }
 
 interface ModelState {
@@ -43,6 +51,7 @@ type ModelAction =
   | { type: 'ADD_FIELD_TO_TABLE'; payload: { tableId: string; field: Field } }
   | { type: 'UPDATE_FIELD'; payload: { tableId: string; fieldId: string; updatedField: Field } }
   | { type: 'REMOVE_FIELD'; payload: { tableId: string; fieldId: string } }
+  | { type: 'CREATE_REFERENCE_FIELD'; payload: { sourceTableId: string; targetTableId: string; fieldName: string; isTwoWay: boolean; isMultiple: boolean } }
   | { type: 'ADD_RELATIONSHIP'; payload: Relationship }
   | { type: 'UPDATE_RELATIONSHIP'; payload: { relationshipId: string; updatedRelationship: Relationship } }
   | { type: 'REMOVE_RELATIONSHIP'; payload: string }
@@ -58,6 +67,7 @@ interface ModelContextType extends ModelState {
   addFieldToTable: (tableId: string, field: Field) => void;
   updateField: (tableId: string, fieldId: string, updatedField: Field) => void;
   removeField: (tableId: string, fieldId: string) => void;
+  createReferenceField: (sourceTableId: string, targetTableId: string, fieldName: string, isTwoWay: boolean, isMultiple: boolean) => void;
   addRelationship: (relationship: Relationship) => void;
   updateRelationship: (relationshipId: string, updatedRelationship: Relationship) => void;
   removeRelationship: (relationshipId: string) => void;
@@ -161,20 +171,140 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
     }
     
     case 'REMOVE_FIELD': {
-      const updatedTables = state.tables.map((table) => {
-        if (table.id !== action.payload.tableId) return table;
-        return {
-          ...table,
-          fields: table.fields.filter((field) => field.id !== action.payload.fieldId)
-        };
+      let updatedTables = [...state.tables];
+      let updatedRelationships = [...state.relationships];
+      
+      const sourceTable = updatedTables.find(t => t.id === action.payload.tableId);
+      if (sourceTable) {
+        const fieldToRemove = sourceTable.fields.find(f => f.id === action.payload.fieldId);
+        
+        // If this is a reference field that's part of a two-way relationship,
+        // we need to remove the linked field in the other table too
+        if (fieldToRemove && (fieldToRemove.type === 'reference' || fieldToRemove.type === 'referenceTwo') &&
+            fieldToRemove.reference && fieldToRemove.reference.linkedFieldId) {
+          const targetTableId = fieldToRemove.reference.tableId;
+          const linkedFieldId = fieldToRemove.reference.linkedFieldId;
+          
+          updatedTables = updatedTables.map(table => {
+            if (table.id === targetTableId) {
+              return {
+                ...table,
+                fields: table.fields.filter(f => f.id !== linkedFieldId)
+              };
+            }
+            return table;
+          });
+        }
+        
+        // Update the source table to remove the field
+        updatedTables = updatedTables.map(table => {
+          if (table.id === action.payload.tableId) {
+            return {
+              ...table,
+              fields: table.fields.filter(f => f.id !== action.payload.fieldId)
+            };
+          }
+          return table;
+        });
+        
+        // Remove relationships connected to this field
+        updatedRelationships = updatedRelationships.filter(
+          (rel) => 
+            !(rel.sourceTableId === action.payload.tableId && rel.sourceFieldId === action.payload.fieldId) &&
+            !(rel.targetTableId === action.payload.tableId && rel.targetFieldId === action.payload.fieldId)
+        );
+      }
+      
+      return saveHistory(state, updatedTables, updatedRelationships);
+    }
+    
+    case 'CREATE_REFERENCE_FIELD': {
+      const { sourceTableId, targetTableId, fieldName, isTwoWay, isMultiple } = action.payload;
+      
+      let updatedTables = [...state.tables];
+      let updatedRelationships = [...state.relationships];
+      
+      const sourceTable = updatedTables.find(t => t.id === sourceTableId);
+      const targetTable = updatedTables.find(t => t.id === targetTableId);
+      
+      if (!sourceTable || !targetTable) return state;
+      
+      // Create unique IDs for the fields and relationship
+      const sourceFieldId = `field-${Date.now()}-source`;
+      const targetFieldId = `field-${Date.now()}-target`;
+      const relationshipId = `rel-${Date.now()}`;
+      
+      // Create the source field
+      const sourceField: Field = {
+        id: sourceFieldId,
+        name: fieldName,
+        type: isTwoWay ? 'referenceTwo' : 'reference',
+        required: false,
+        unique: false,
+        reference: {
+          tableId: targetTableId,
+          isTwoWay,
+          isMultiple,
+          linkedFieldId: isTwoWay ? targetFieldId : undefined
+        }
+      };
+      
+      // Update source table with the new field
+      updatedTables = updatedTables.map(table => {
+        if (table.id === sourceTableId) {
+          return {
+            ...table,
+            fields: [...table.fields, sourceField]
+          };
+        }
+        return table;
       });
       
-      // Remove relationships connected to this field
-      const updatedRelationships = state.relationships.filter(
-        (rel) =>
-          !(rel.sourceTableId === action.payload.tableId && rel.sourceFieldId === action.payload.fieldId) &&
-          !(rel.targetTableId === action.payload.tableId && rel.targetFieldId === action.payload.fieldId)
-      );
+      // For two-way references, create the target field
+      if (isTwoWay) {
+        const targetField: Field = {
+          id: targetFieldId,
+          name: `${fieldName} (from ${sourceTable.name})`,
+          type: 'referenceTwo',
+          required: false,
+          unique: false,
+          reference: {
+            tableId: sourceTableId,
+            isTwoWay: true,
+            isMultiple: true, // Two-way references always allow multiple records
+            linkedFieldId: sourceFieldId
+          }
+        };
+        
+        // Update target table with the new field
+        updatedTables = updatedTables.map(table => {
+          if (table.id === targetTableId) {
+            return {
+              ...table,
+              fields: [...table.fields, targetField]
+            };
+          }
+          return table;
+        });
+      }
+      
+      // Create the relationship
+      const relationship: Relationship = {
+        id: relationshipId,
+        sourceTableId,
+        sourceFieldId,
+        targetTableId,
+        targetFieldId: isTwoWay ? targetFieldId : undefined,
+        // Determine the relationship type based on multiplicity
+        type: isMultiple 
+          ? (isTwoWay ? 'manyToMany' : 'oneToMany')
+          : (isTwoWay ? 'manyToOne' : 'oneToOne'),
+        isReference: true,
+        isTwoWay
+      };
+      
+      // Add the relationship
+      updatedRelationships = [...updatedRelationships, relationship];
       
       return saveHistory(state, updatedTables, updatedRelationships);
     }
@@ -275,6 +405,10 @@ export const ModelProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     dispatch({ type: 'REMOVE_FIELD', payload: { tableId, fieldId } });
   };
 
+  const createReferenceField = (sourceTableId: string, targetTableId: string, fieldName: string, isTwoWay: boolean, isMultiple: boolean) => {
+    dispatch({ type: 'CREATE_REFERENCE_FIELD', payload: { sourceTableId, targetTableId, fieldName, isTwoWay, isMultiple } });
+  };
+
   const addRelationship = (relationship: Relationship) => {
     dispatch({ type: 'ADD_RELATIONSHIP', payload: relationship });
   };
@@ -316,6 +450,7 @@ export const ModelProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     addFieldToTable,
     updateField,
     removeField,
+    createReferenceField,
     addRelationship,
     updateRelationship,
     removeRelationship,

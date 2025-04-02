@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Database } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export const FieldTypePalette = ({ setIsDraggingField }) => {
@@ -68,6 +68,8 @@ export const FieldTypePalette = ({ setIsDraggingField }) => {
                   <div className="grid grid-cols-1 gap-1">
                     {types.map((fieldType) => {
                       const TypeIcon = fieldType.icon;
+                      const isReferenceType = fieldType.value === 'reference' || fieldType.value === 'referenceTwo';
+                      
                       return (
                         <div
                           key={fieldType.value}
@@ -76,7 +78,8 @@ export const FieldTypePalette = ({ setIsDraggingField }) => {
                           onDragEnd={handleDragEnd}
                           className={cn(
                             "flex items-center gap-2 p-2 rounded-md cursor-move",
-                            "text-xs hover:bg-slate-100 transition-colors"
+                            "text-xs hover:bg-slate-100 transition-colors",
+                            isReferenceType && "border border-blue-100 bg-blue-50"
                           )}
                         >
                           <div 
@@ -85,7 +88,17 @@ export const FieldTypePalette = ({ setIsDraggingField }) => {
                           >
                             <TypeIcon size={18} style={{ color: fieldType.color }} />
                           </div>
-                          <span className="truncate">{fieldType.label}</span>
+                          <div className="truncate flex-1">
+                            <div className="truncate">{fieldType.label}</div>
+                            
+                            {isReferenceType && (
+                              <div className="text-[10px] text-blue-600 mt-0.5">
+                                {fieldType.value === 'reference' 
+                                  ? "Links to a single table" 
+                                  : "Links to a table with backward relation"}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}

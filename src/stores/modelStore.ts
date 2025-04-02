@@ -10,6 +10,12 @@ export interface Field {
   required: boolean;
   unique: boolean;
   options?: Record<string, any>;
+  reference?: {
+    tableId: string;
+    isTwoWay: boolean;
+    isMultiple: boolean;
+    linkedFieldId?: string;
+  };
 }
 
 export interface Table {
@@ -24,8 +30,10 @@ export interface Relationship {
   sourceTableId: string;
   sourceFieldId: string;
   targetTableId: string;
-  targetFieldId: string;
+  targetFieldId?: string;
   type: 'oneToOne' | 'oneToMany' | 'manyToOne' | 'manyToMany';
+  isReference: boolean;
+  isTwoWay: boolean;
 }
 
 export interface ModelState {
@@ -44,6 +52,9 @@ export interface ModelState {
   addFieldToTable: (tableId: string, field: Field) => void;
   updateField: (tableId: string, fieldId: string, updatedField: Field) => void;
   removeField: (tableId: string, fieldId: string) => void;
+  
+  // Reference field specific actions
+  createReferenceField: (sourceTableId: string, targetTableId: string, fieldName: string, isTwoWay: boolean, isMultiple: boolean) => void;
   
   // Relationship actions
   addRelationship: (relationship: Relationship) => void;
@@ -145,6 +156,22 @@ export const useModelStore = create<ModelState>()(
       removeField: (tableId, fieldId) => set((state) => {
         const table = state.tables.find((t) => t.id === tableId);
         if (table) {
+          const fieldToRemove = table.fields.find(f => f.id === fieldId);
+          
+          // If this is a reference field that's part of a two-way relationship,
+          // we need to remove the linked field in the other table too
+          if (fieldToRemove && (fieldToRemove.type === 'reference' || fieldToRemove.type === 'referenceTwo') &&
+              fieldToRemove.reference && fieldToRemove.reference.linkedFieldId) {
+            const targetTableId = fieldToRemove.reference.tableId;
+            const linkedFieldId = fieldToRemove.reference.linkedFieldId;
+            
+            const targetTable = state.tables.find(t => t.id === targetTableId);
+            if (targetTable) {
+              targetTable.fields = targetTable.fields.filter(f => f.id !== linkedFieldId);
+            }
+          }
+          
+          // Remove the field
           table.fields = table.fields.filter((f) => f.id !== fieldId);
           
           // Remove relationships connected to this field
@@ -156,6 +183,77 @@ export const useModelStore = create<ModelState>()(
           
           saveHistory(state);
         }
+      }),
+      
+      // Reference field specific action
+      createReferenceField: (sourceTableId, targetTableId, fieldName, isTwoWay, isMultiple) => set((state) => {
+        const sourceTable = state.tables.find(t => t.id === sourceTableId);
+        const targetTable = state.tables.find(t => t.id === targetTableId);
+        
+        if (!sourceTable || !targetTable) return;
+        
+        // Create unique IDs for the fields and relationship
+        const sourceFieldId = `field-${Date.now()}-source`;
+        const targetFieldId = `field-${Date.now()}-target`;
+        const relationshipId = `rel-${Date.now()}`;
+        
+        // Create the source field
+        const sourceField: Field = {
+          id: sourceFieldId,
+          name: fieldName,
+          type: isTwoWay ? 'referenceTwo' : 'reference',
+          required: false,
+          unique: false,
+          reference: {
+            tableId: targetTableId,
+            isTwoWay,
+            isMultiple,
+            linkedFieldId: isTwoWay ? targetFieldId : undefined
+          }
+        };
+        
+        // Add field to source table
+        sourceTable.fields.push(sourceField);
+        
+        // For two-way references, create the target field
+        if (isTwoWay) {
+          const targetField: Field = {
+            id: targetFieldId,
+            name: `${fieldName} (from ${sourceTable.name})`,
+            type: 'referenceTwo',
+            required: false,
+            unique: false,
+            reference: {
+              tableId: sourceTableId,
+              isTwoWay: true,
+              isMultiple: true, // Two-way references always allow multiple records
+              linkedFieldId: sourceFieldId
+            }
+          };
+          
+          // Add field to target table
+          targetTable.fields.push(targetField);
+        }
+        
+        // Create the relationship
+        const relationship: Relationship = {
+          id: relationshipId,
+          sourceTableId,
+          sourceFieldId,
+          targetTableId,
+          targetFieldId: isTwoWay ? targetFieldId : undefined,
+          // Determine the relationship type based on multiplicity
+          type: isMultiple 
+            ? (isTwoWay ? 'manyToMany' : 'oneToMany')
+            : (isTwoWay ? 'manyToOne' : 'oneToOne'),
+          isReference: true,
+          isTwoWay
+        };
+        
+        // Add relationship
+        state.relationships.push(relationship);
+        
+        saveHistory(state);
       }),
       
       // Relationship actions

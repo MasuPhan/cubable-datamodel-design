@@ -1,6 +1,8 @@
+
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,17 +11,21 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, ChevronDown, GripVertical, Check } from "lucide-react";
+import { Trash2, ChevronDown, GripVertical, Check, Link, ArrowRight, Database, ArrowLeftRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fieldTypes, getFieldIcon } from "@/lib/fieldTypes";
 import { useModelContext } from "@/contexts/ModelContext";
 
 export const FieldRow = ({ field, tableId, isLast }) => {
-  const { updateField, removeField } = useModelContext();
+  const { tables, updateField, removeField } = useModelContext();
   const [isEditingName, setIsEditingName] = useState(false);
   const [fieldName, setFieldName] = useState(field.name);
   
   const FieldIcon = getFieldIcon(field.type);
+  const isReference = field.type === 'reference' || field.type === 'referenceTwo';
+  const targetTable = isReference && field.reference?.tableId 
+    ? tables.find(t => t.id === field.reference.tableId)
+    : null;
 
   const handleFieldNameChange = (e) => {
     setFieldName(e.target.value);
@@ -37,7 +43,18 @@ export const FieldRow = ({ field, tableId, isLast }) => {
   };
 
   const handleTypeChange = (type) => {
-    updateField(tableId, field.id, { ...field, type });
+    if (isReference && type !== 'reference' && type !== 'referenceTwo') {
+      // If changing from reference type to non-reference type,
+      // clear the reference data
+      const updatedField = { 
+        ...field, 
+        type,
+        reference: undefined
+      };
+      updateField(tableId, field.id, updatedField);
+    } else {
+      updateField(tableId, field.id, { ...field, type });
+    }
   };
 
   const handleRequiredChange = (checked) => {
@@ -87,9 +104,12 @@ export const FieldRow = ({ field, tableId, isLast }) => {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-7 text-xs px-2 flex items-center gap-1"
+            className={cn(
+              "h-7 text-xs px-2 flex items-center gap-1",
+              isReference && "text-blue-600"  
+            )}
           >
-            <FieldIcon size={14} className="text-gray-600" />
+            <FieldIcon size={14} className={isReference ? "text-blue-500" : "text-gray-600"} />
             <span className="truncate max-w-[80px]">
               {fieldTypes.find(t => t.value === field.type)?.label || field.type}
             </span>
@@ -116,8 +136,23 @@ export const FieldRow = ({ field, tableId, isLast }) => {
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {isReference && targetTable && (
+        <div className="flex items-center">
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap">
+            {field.type === 'referenceTwo' ? (
+              <ArrowLeftRight size={10} />
+            ) : (
+              <ArrowRight size={10} />
+            )}
+            <span className="truncate max-w-[50px]" title={targetTable.name}>
+              {targetTable.name}
+            </span>
+          </Badge>
+        </div>
+      )}
+
       <div className="flex items-center gap-1 pl-1">
-        <div className="flex items-center gap-1" title="Bắt buộc">
+        <div className="flex items-center gap-1" title="Required">
           <Checkbox
             id={`required-${field.id}`}
             checked={field.required}
@@ -129,7 +164,7 @@ export const FieldRow = ({ field, tableId, isLast }) => {
           </label>
         </div>
         
-        <div className="flex items-center gap-1" title="Duy nhất">
+        <div className="flex items-center gap-1" title="Unique">
           <Checkbox
             id={`unique-${field.id}`}
             checked={field.unique}

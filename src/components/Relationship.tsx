@@ -1,6 +1,7 @@
 
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { ArrowRight, ArrowLeftRight } from "lucide-react";
 
 export const Relationship = ({ relationship, tables }) => {
   const sourceTable = tables.find((t) => t.id === relationship.sourceTableId);
@@ -39,7 +40,9 @@ export const Relationship = ({ relationship, tables }) => {
   const angle = Math.atan2(dy, dx) * 180 / Math.PI;
   
   const sourceField = sourceTable.fields.find(f => f.id === relationship.sourceFieldId);
-  const targetField = targetTable.fields.find(f => f.id === relationship.targetFieldId);
+  const targetField = relationship.targetFieldId 
+    ? targetTable.fields.find(f => f.id === relationship.targetFieldId) 
+    : null;
   
   const getRelationshipType = () => {
     if (relationship.type === "oneToOne") return "1:1";
@@ -99,21 +102,33 @@ export const Relationship = ({ relationship, tables }) => {
           stroke="currentColor"
           strokeWidth="2"
           strokeDasharray={relationship.isReference ? "0" : "4"} 
-          className={relationship.isReference ? "text-indigo-600" : "text-indigo-400"}
+          className={relationship.isReference 
+            ? (relationship.isTwoWay ? "text-purple-600" : "text-indigo-600") 
+            : "text-indigo-400"}
           markerEnd={`url(#arrow-${relationship.id})`}
           markerStart={relationship.isTwoWay ? `url(#arrow-back-${relationship.id})` : ""}
         />
         
         <foreignObject
-          x={midX - 50}
+          x={midX - 60}
           y={midY - 12}
-          width="100" 
+          width="120" 
           height="24"
         >
           <div 
-            className="bg-white border border-indigo-200 rounded-full px-3 py-0.5 text-xs flex items-center justify-center text-indigo-700 shadow-sm"
+            className={cn(
+              "bg-white border rounded-full px-3 py-0.5 text-xs flex items-center justify-center shadow-sm",
+              relationship.isTwoWay 
+                ? "border-purple-200 text-purple-700" 
+                : "border-indigo-200 text-indigo-700"
+            )}
             title={getRelationshipDetails()}
           >
+            <span className="mr-1">
+              {relationship.isTwoWay 
+                ? <ArrowLeftRight className="inline-block w-3 h-3 mr-1" /> 
+                : <ArrowRight className="inline-block w-3 h-3 mr-1" />}
+            </span>
             {relationship.isReference 
               ? (relationship.isTwoWay ? "Two-way Ref" : "One-way Ref") 
               : getRelationshipType()}

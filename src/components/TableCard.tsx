@@ -9,16 +9,19 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Pencil, MoreVertical, Trash2, Plus, GripVertical } from "lucide-react";
+import { Pencil, MoreVertical, Trash2, Plus, GripVertical, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FieldRow } from "@/components/FieldRow";
 import { useModelContext } from "@/contexts/ModelContext";
+import { AddReferenceDialog } from "@/components/AddReferenceDialog";
 
 export const TableCard = ({ table, onDragEnd, scale }) => {
   const { updateTableName, removeTable, addFieldToTable } = useModelContext();
   const [isEditing, setIsEditing] = useState(false);
   const [tableName, setTableName] = useState(table.name);
+  const [isAddReferenceOpen, setIsAddReferenceOpen] = useState(false);
 
   const handleNameChange = (e) => {
     setTableName(e.target.value);
@@ -106,11 +109,11 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
             ))}
           </div>
           
-          <div className="p-2 bg-slate-50 border-t border-slate-100">
+          <div className="p-2 flex bg-slate-50 border-t border-slate-100">
             <Button
               variant="ghost"
               size="sm"
-              className="w-full text-xs h-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+              className="flex-1 text-xs h-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
               onClick={() => {
                 addFieldToTable(table.id, {
                   id: `field-${Date.now()}`,
@@ -124,9 +127,25 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
               <Plus size={14} className="mr-1" />
               Add Field
             </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 text-xs h-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-l border-slate-200"
+              onClick={() => setIsAddReferenceOpen(true)}
+            >
+              <Database size={14} className="mr-1" />
+              Add Reference
+            </Button>
           </div>
         </CardContent>
       </Card>
+      
+      <AddReferenceDialog
+        open={isAddReferenceOpen}
+        onOpenChange={setIsAddReferenceOpen}
+        sourceTableId={table.id}
+      />
     </motion.div>
   );
 };

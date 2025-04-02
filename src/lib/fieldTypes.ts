@@ -35,7 +35,8 @@ export const fieldTypes: FieldType[] = [
   { value: "progress", label: "Progress", icon: GaugeCircle, color: "#b64cff" },
   
   // Advanced types
-  { value: "reference", label: "Reference", icon: Database, color: "#5446e0" },
+  { value: "reference", label: "Reference (1-way)", icon: Database, color: "#5446e0" },
+  { value: "referenceTwo", label: "Reference (2-way)", icon: Database, color: "#e34a6b" },
   { value: "updatedAt", label: "Last Updated At", icon: Clock, color: "#ff8b51" },
   { value: "updatedBy", label: "Last Updated By", icon: CalendarClock, color: "#ff8b51" },
   { value: "createdBy", label: "Created By", icon: User, color: "#ffc043" },
@@ -60,7 +61,7 @@ export const fieldTypeCategories = {
   advanced: {
     label: "Advanced",
     types: fieldTypes.filter(type => 
-      ["reference", "updatedAt", "updatedBy", "createdBy", "createdAt", "lookup", "formula"].includes(type.value)
+      ["reference", "referenceTwo", "updatedAt", "updatedBy", "createdBy", "createdAt", "lookup", "formula"].includes(type.value)
     )
   }
 };
@@ -96,6 +97,7 @@ export function getDefaultValueForType(fieldType: string): any {
     case "file":
       return null;
     case "reference":
+    case "referenceTwo":
     case "lookup":
     case "formula":
     case "user":
