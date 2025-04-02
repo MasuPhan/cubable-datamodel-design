@@ -4,7 +4,7 @@ import {
   User, Phone, Mail, DollarSign, List, 
   Clock, Database, Tag, Star, Search,
   Code, Paperclip, LucideIcon, ListOrdered,
-  CalendarClock, Function, GaugeCircle
+  CalendarClock, Binary, GaugeCircle
 } from "lucide-react";
 
 export type FieldType = {
@@ -41,7 +41,7 @@ export const fieldTypes: FieldType[] = [
   { value: "createdBy", label: "Tạo bởi", icon: User, color: "#ffc043" },
   { value: "createdAt", label: "Tạo lúc", icon: Calendar, color: "#ffc043" },
   { value: "lookup", label: "Tra cứu", icon: Search, color: "#b64cff" },
-  { value: "formula", label: "Công thức", icon: Function, color: "#e34a6b" },
+  { value: "formula", label: "Công thức", icon: Binary, color: "#e34a6b" },
 ];
 
 export const fieldTypeCategories = {
