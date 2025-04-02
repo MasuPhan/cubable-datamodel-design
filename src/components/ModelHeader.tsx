@@ -125,7 +125,7 @@ export const ModelHeader = () => {
           className="flex items-center"
         >
           <Upload size={16} className="mr-2" />
-          Nhập
+          Import
         </Button>
         
         <Button 
@@ -134,14 +134,14 @@ export const ModelHeader = () => {
           className="flex items-center"
         >
           <Download size={16} className="mr-2" />
-          Xuất
+          Export
         </Button>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center">
               <FileText size={16} className="mr-2" />
-              Mẫu
+              Template
               <ChevronDown size={16} className="ml-2" />
             </Button>
           </DropdownMenuTrigger>
