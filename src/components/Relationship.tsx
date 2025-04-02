@@ -49,6 +49,19 @@ export const Relationship = ({ relationship, tables }) => {
     return "";
   };
 
+  const getRelationshipDetails = () => {
+    const sourceFieldName = sourceField?.name || "Unknown";
+    const targetFieldName = targetField?.name || "Unknown";
+    
+    if (relationship.isReference) {
+      return relationship.isTwoWay 
+        ? `Two-way Reference: ${sourceTable.name}.${sourceFieldName} ↔ ${targetTable.name}.${targetFieldName}`
+        : `One-way Reference: ${sourceTable.name}.${sourceFieldName} → ${targetTable.name}`;
+    }
+    
+    return `${sourceTable.name}.${sourceFieldName} → ${targetTable.name}.${targetFieldName}`;
+  };
+
   return (
     <div className="absolute inset-0 pointer-events-none">
       <svg width="100%" height="100%" className="absolute inset-0">
@@ -64,26 +77,46 @@ export const Relationship = ({ relationship, tables }) => {
           >
             <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" className="text-indigo-500" />
           </marker>
+          
+          {relationship.isTwoWay && (
+            <marker
+              id={`arrow-back-${relationship.id}`}
+              viewBox="0 0 10 10"
+              refX="5"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" className="text-purple-500" />
+            </marker>
+          )}
         </defs>
+        
+        {/* Main relationship line */}
         <path
           d={`M${sourceCenter.x},${sourceCenter.y} L${targetCenter.x},${targetCenter.y}`}
           stroke="currentColor"
           strokeWidth="2"
-          strokeDasharray="4"
-          className="text-indigo-400"
+          strokeDasharray={relationship.isReference ? "0" : "4"} 
+          className={relationship.isReference ? "text-indigo-600" : "text-indigo-400"}
           markerEnd={`url(#arrow-${relationship.id})`}
+          markerStart={relationship.isTwoWay ? `url(#arrow-back-${relationship.id})` : ""}
         />
         
         <foreignObject
-          x={midX - 25}
+          x={midX - 50}
           y={midY - 12}
-          width="50" 
+          width="100" 
           height="24"
         >
           <div 
-            className="bg-white border border-indigo-200 rounded-full px-2 py-0.5 text-xs flex items-center justify-center text-indigo-700 shadow-sm"
+            className="bg-white border border-indigo-200 rounded-full px-3 py-0.5 text-xs flex items-center justify-center text-indigo-700 shadow-sm"
+            title={getRelationshipDetails()}
           >
-            {getRelationshipType()}
+            {relationship.isReference 
+              ? (relationship.isTwoWay ? "Two-way Ref" : "One-way Ref") 
+              : getRelationshipType()}
           </div>
         </foreignObject>
       </svg>

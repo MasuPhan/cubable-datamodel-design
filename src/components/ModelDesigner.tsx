@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useModelContext } from "@/contexts/ModelContext";
 
 export const ModelDesigner = () => {
-  const { tables, relationships, updateTablePosition } = useModelContext();
+  const { tables, relationships, updateTablePosition, addFieldToTable } = useModelContext();
   const [isDraggingField, setIsDraggingField] = useState(false);
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -66,13 +66,23 @@ export const ModelDesigner = () => {
     const fieldType = e.dataTransfer.getData("fieldType");
     if (!fieldType) return;
 
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const tableId = e.dataTransfer.getData("targetTableId");
-
-    // If we have a table ID, this is a drop onto an existing table
-    if (tableId) {
-      const { addFieldToTable } = useModelContext();
-      addFieldToTable(tableId, {
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / scale - position.x / scale;
+    const y = (e.clientY - rect.top) / scale - position.y / scale;
+    
+    // Find the table (if any) under the drop position
+    const droppedOnTable = tables.find(table => {
+      const tableLeft = table.position.x;
+      const tableRight = table.position.x + 300;
+      const tableTop = table.position.y;
+      const tableBottom = table.position.y + 40 + table.fields.length * 40; // Approximate height
+      
+      return x >= tableLeft && x <= tableRight && y >= tableTop && y <= tableBottom;
+    });
+    
+    if (droppedOnTable) {
+      // Add field to the table
+      addFieldToTable(droppedOnTable.id, {
         id: `field-${Date.now()}`,
         name: `New ${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field`,
         type: fieldType,

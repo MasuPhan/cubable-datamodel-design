@@ -16,49 +16,49 @@ export type FieldType = {
 
 export const fieldTypes: FieldType[] = [
   // Basic types
-  { value: "text", label: "Văn bản", icon: AlignLeft, color: "#4c7cff" },
-  { value: "longText", label: "Đoạn văn bản", icon: FileText, color: "#4c7cff" },
-  { value: "select", label: "Tùy chọn", icon: Tag, color: "#ff8b51" },
-  { value: "date", label: "Ngày", icon: Calendar, color: "#ff8b51" },
-  { value: "checkbox", label: "Hộp kiểm", icon: Check, color: "#c44cff" },
-  { value: "file", label: "Tập tin", icon: Paperclip, color: "#c44cff" },
-  { value: "number", label: "Số", icon: ListOrdered, color: "#6155ff" },
+  { value: "text", label: "Text", icon: AlignLeft, color: "#4c7cff" },
+  { value: "longText", label: "Long Text", icon: FileText, color: "#4c7cff" },
+  { value: "select", label: "Select", icon: Tag, color: "#ff8b51" },
+  { value: "date", label: "Date", icon: Calendar, color: "#ff8b51" },
+  { value: "checkbox", label: "Checkbox", icon: Check, color: "#c44cff" },
+  { value: "file", label: "File", icon: Paperclip, color: "#c44cff" },
+  { value: "number", label: "Number", icon: ListOrdered, color: "#6155ff" },
   
   // Business types
-  { value: "phone", label: "Điện thoại", icon: Phone, color: "#4aad6e" },
+  { value: "phone", label: "Phone", icon: Phone, color: "#4aad6e" },
   { value: "email", label: "Email", icon: Mail, color: "#4aad6e" },
-  { value: "url", label: "Liên kết", icon: Link, color: "#6155ff" },
-  { value: "currency", label: "Tiền tệ", icon: DollarSign, color: "#ffc043" },
-  { value: "rating", label: "Đánh giá", icon: Star, color: "#ffc043" },
-  { value: "autoNumber", label: "Đánh số tự động", icon: ListOrdered, color: "#6155ff" },
-  { value: "user", label: "Nhân sự", icon: User, color: "#4aad6e" },
-  { value: "progress", label: "Tiến độ", icon: GaugeCircle, color: "#b64cff" },
+  { value: "url", label: "URL", icon: Link, color: "#6155ff" },
+  { value: "currency", label: "Currency", icon: DollarSign, color: "#ffc043" },
+  { value: "rating", label: "Rating", icon: Star, color: "#ffc043" },
+  { value: "autoNumber", label: "Auto Number", icon: ListOrdered, color: "#6155ff" },
+  { value: "user", label: "User", icon: User, color: "#4aad6e" },
+  { value: "progress", label: "Progress", icon: GaugeCircle, color: "#b64cff" },
   
   // Advanced types
-  { value: "reference", label: "Tham chiếu", icon: Database, color: "#5446e0" },
-  { value: "updatedAt", label: "Cập nhật lần cuối lúc", icon: Clock, color: "#ff8b51" },
-  { value: "updatedBy", label: "Cập nhật lần cuối bởi", icon: CalendarClock, color: "#ff8b51" },
-  { value: "createdBy", label: "Tạo bởi", icon: User, color: "#ffc043" },
-  { value: "createdAt", label: "Tạo lúc", icon: Calendar, color: "#ffc043" },
-  { value: "lookup", label: "Tra cứu", icon: Search, color: "#b64cff" },
-  { value: "formula", label: "Công thức", icon: Binary, color: "#e34a6b" },
+  { value: "reference", label: "Reference", icon: Database, color: "#5446e0" },
+  { value: "updatedAt", label: "Last Updated At", icon: Clock, color: "#ff8b51" },
+  { value: "updatedBy", label: "Last Updated By", icon: CalendarClock, color: "#ff8b51" },
+  { value: "createdBy", label: "Created By", icon: User, color: "#ffc043" },
+  { value: "createdAt", label: "Created At", icon: Calendar, color: "#ffc043" },
+  { value: "lookup", label: "Lookup", icon: Search, color: "#b64cff" },
+  { value: "formula", label: "Formula", icon: Binary, color: "#e34a6b" },
 ];
 
 export const fieldTypeCategories = {
   basic: {
-    label: "Cơ bản",
+    label: "Basic",
     types: fieldTypes.filter(type => 
       ["text", "longText", "select", "date", "checkbox", "file", "number"].includes(type.value)
     )
   },
   business: {
-    label: "Dành cho doanh nghiệp",
+    label: "Business",
     types: fieldTypes.filter(type => 
       ["phone", "email", "url", "currency", "rating", "autoNumber", "user", "progress"].includes(type.value)
     )
   },
   advanced: {
-    label: "Nâng cao",
+    label: "Advanced",
     types: fieldTypes.filter(type => 
       ["reference", "updatedAt", "updatedBy", "createdBy", "createdAt", "lookup", "formula"].includes(type.value)
     )

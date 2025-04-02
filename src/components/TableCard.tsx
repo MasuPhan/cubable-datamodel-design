@@ -84,11 +84,11 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setIsEditing(true)}>
                 <Pencil size={14} className="mr-2" />
-                Đổi tên
+                Rename
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDelete} className="text-red-600">
                 <Trash2 size={14} className="mr-2" />
-                Xóa bảng
+                Delete Table
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -122,7 +122,7 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
               }}
             >
               <Plus size={14} className="mr-1" />
-              Thêm trường
+              Add Field
             </Button>
           </div>
         </CardContent>
