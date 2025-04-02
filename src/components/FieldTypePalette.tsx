@@ -23,7 +23,7 @@ export const FieldTypePalette = ({ setIsDraggingField }) => {
   }
 
   return (
-    <Card className="absolute left-4 top-4 w-[250px] shadow-md z-10 bg-white/90 backdrop-blur-md">
+    <Card className="absolute left-4 top-4 w-[280px] shadow-md z-10 bg-white/90 backdrop-blur-md">
       <CardHeader className="p-3 pb-0">
         <CardTitle className="text-sm">Loại trường dữ liệu</CardTitle>
         <p className="text-xs text-gray-500">
@@ -34,16 +34,20 @@ export const FieldTypePalette = ({ setIsDraggingField }) => {
       <CardContent className="p-2">
         <Tabs defaultValue="basic">
           <TabsList className="w-full h-8 mb-2">
-            {Object.keys(fieldTypeCategories).map((category) => (
-              <TabsTrigger key={category} value={category} className="text-xs h-7">
-                {fieldTypeCategories[category].label}
-              </TabsTrigger>
-            ))}
+            <TabsTrigger value="basic" className="text-xs h-7">
+              Cơ bản
+            </TabsTrigger>
+            <TabsTrigger value="business" className="text-xs h-7">
+              Dành cho doanh nghiệp
+            </TabsTrigger>
+            <TabsTrigger value="advanced" className="text-xs h-7">
+              Nâng cao
+            </TabsTrigger>
           </TabsList>
           
-          {Object.entries(fieldTypeCategories).map(([category, { types }]) => (
+          {Object.entries(fieldTypeCategories).map(([category, { label, types }]) => (
             <TabsContent key={category} value={category} className="m-0">
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-2 gap-2">
                 {types.map((fieldType) => {
                   const TypeIcon = fieldType.icon;
                   return (
@@ -53,11 +57,16 @@ export const FieldTypePalette = ({ setIsDraggingField }) => {
                       onDragStart={(e) => handleDragStart(e, fieldType.value)}
                       onDragEnd={handleDragEnd}
                       className={cn(
-                        "flex items-center gap-1 p-2 rounded-md cursor-move",
-                        "text-xs hover:bg-indigo-50 transition-colors"
+                        "flex items-center gap-2 p-2 rounded-md cursor-move",
+                        "text-xs hover:bg-slate-100 transition-colors"
                       )}
                     >
-                      <TypeIcon size={14} className="text-indigo-600" />
+                      <div 
+                        className="w-8 h-8 rounded flex items-center justify-center" 
+                        style={{ backgroundColor: `${fieldType.color}20` }}
+                      >
+                        <TypeIcon size={18} style={{ color: fieldType.color }} />
+                      </div>
                       <span className="truncate">{fieldType.label}</span>
                     </div>
                   );
