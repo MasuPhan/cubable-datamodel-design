@@ -10,13 +10,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useModelStore } from "@/stores/modelStore";
 import { Pencil, MoreVertical, Trash2, Plus, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FieldRow } from "@/components/FieldRow";
+import { useModelContext } from "@/contexts/ModelContext";
 
 export const TableCard = ({ table, onDragEnd, scale }) => {
-  const { updateTableName, removeTable } = useModelStore();
+  const { updateTableName, removeTable, addFieldToTable } = useModelContext();
   const [isEditing, setIsEditing] = useState(false);
   const [tableName, setTableName] = useState(table.name);
 
@@ -112,7 +112,6 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
               size="sm"
               className="w-full text-xs h-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
               onClick={() => {
-                const { addFieldToTable } = useModelStore.getState();
                 addFieldToTable(table.id, {
                   id: `field-${Date.now()}`,
                   name: "New Field",

@@ -1,14 +1,14 @@
 
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { useModelStore } from "@/stores/modelStore";
 import { TableCard } from "@/components/TableCard";
 import { Relationship } from "@/components/Relationship";
 import { FieldTypePalette } from "@/components/FieldTypePalette";
 import { cn } from "@/lib/utils";
+import { useModelContext } from "@/contexts/ModelContext";
 
 export const ModelDesigner = () => {
-  const { tables, relationships, updateTablePosition } = useModelStore();
+  const { tables, relationships, updateTablePosition } = useModelContext();
   const [isDraggingField, setIsDraggingField] = useState(false);
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -71,7 +71,7 @@ export const ModelDesigner = () => {
 
     // If we have a table ID, this is a drop onto an existing table
     if (tableId) {
-      const { addFieldToTable } = useModelStore.getState();
+      const { addFieldToTable } = useModelContext();
       addFieldToTable(tableId, {
         id: `field-${Date.now()}`,
         name: `New ${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field`,

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,13 +9,13 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useModelStore } from "@/stores/modelStore";
 import { Trash2, ChevronDown, GripVertical, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fieldTypes, getFieldIcon } from "@/lib/fieldTypes";
+import { useModelContext } from "@/contexts/ModelContext";
 
 export const FieldRow = ({ field, tableId, isLast }) => {
-  const { updateField, removeField } = useModelStore();
+  const { updateField, removeField } = useModelContext();
   const [isEditingName, setIsEditingName] = useState(false);
   const [fieldName, setFieldName] = useState(field.name);
   

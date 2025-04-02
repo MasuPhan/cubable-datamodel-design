@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,14 +8,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useModelStore } from "@/stores/modelStore";
 import { Plus, Download, Upload, FileJson, FileText, ChevronDown, Undo, Redo } from "lucide-react";
 import { templateModels } from "@/lib/templates";
 import { useToast } from "@/hooks/use-toast";
+import { useModelContext } from "@/contexts/ModelContext";
 
 export const ModelHeader = () => {
   const { toast } = useToast();
-  const { addTable, importModel, exportModel, canUndo, canRedo, undo, redo } = useModelStore();
+  const { addTable, importModel, exportModel, canUndo, canRedo, undo, redo } = useModelContext();
   
   const handleImport = () => {
     const input = document.createElement("input");
