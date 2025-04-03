@@ -4,12 +4,16 @@ import { motion } from "framer-motion";
 import { TableCard } from "@/components/TableCard";
 import { Relationship } from "@/components/Relationship";
 import { FieldTypePalette } from "@/components/FieldTypePalette";
+import { CanvasArea } from "@/components/CanvasArea";
+import { CanvasNote } from "@/components/CanvasNote";
 import { cn } from "@/lib/utils";
 import { useModelContext } from "@/contexts/ModelContext";
 import { ChevronRight, ChevronLeft, MinusCircle, PlusCircle, Maximize, Minimize } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 export const ModelDesigner = () => {
+  const { toast } = useToast();
   const { tables, relationships, updateTablePosition, addFieldToTable } = useModelContext();
   const [isDraggingField, setIsDraggingField] = useState(false);
   const containerRef = useRef(null);
@@ -19,6 +23,11 @@ export const ModelDesigner = () => {
   const [startPanPos, setStartPanPos] = useState({ x: 0, y: 0 });
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isGridVisible, setIsGridVisible] = useState(true);
+  
+  // For areas and notes
+  const [areas, setAreas] = useState([]);
+  const [notes, setNotes] = useState([]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -37,6 +46,16 @@ export const ModelDesigner = () => {
         e.preventDefault();
         setScale(1);
         setPosition({ x: 0, y: 0 });
+      }
+      // Add keyboard shortcuts for palette toggle
+      else if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+        e.preventDefault();
+        setIsPaletteCollapsed(prev => !prev);
+      }
+      // Toggle fullscreen with F11
+      else if (e.key === "F11") {
+        e.preventDefault();
+        toggleFullscreen();
       }
     };
 
@@ -118,6 +137,9 @@ export const ModelDesigner = () => {
         type: fieldType,
         required: false,
         unique: false,
+        isPrimary: false,
+        description: "",
+        defaultValue: "",
       });
     }
   };
@@ -147,6 +169,93 @@ export const ModelDesigner = () => {
   const resetView = () => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
+  };
+
+  const addArea = () => {
+    const newArea = {
+      id: `area-${Date.now()}`,
+      title: "New Area",
+      color: "indigo",
+      position: {
+        x: -position.x / scale + 100,
+        y: -position.y / scale + 100
+      },
+      width: 300,
+      height: 200
+    };
+    setAreas([...areas, newArea]);
+    toast({
+      title: "Area added",
+      description: "New area has been added to the canvas"
+    });
+  };
+
+  const addNote = () => {
+    const newNote = {
+      id: `note-${Date.now()}`,
+      content: "Add your note here...",
+      color: "yellow",
+      position: {
+        x: -position.x / scale + 100,
+        y: -position.y / scale + 100
+      },
+      width: 200
+    };
+    setNotes([...notes, newNote]);
+    toast({
+      title: "Note added",
+      description: "New note has been added to the canvas"
+    });
+  };
+
+  const updateArea = (updatedArea) => {
+    setAreas(areas.map(area => area.id === updatedArea.id ? updatedArea : area));
+  };
+
+  const updateNote = (updatedNote) => {
+    setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note));
+  };
+
+  const deleteArea = (areaId) => {
+    setAreas(areas.filter(area => area.id !== areaId));
+    toast({
+      title: "Area deleted",
+      description: "The area has been removed from the canvas"
+    });
+  };
+
+  const deleteNote = (noteId) => {
+    setNotes(notes.filter(note => note.id !== noteId));
+    toast({
+      title: "Note deleted",
+      description: "The note has been removed from the canvas"
+    });
+  };
+
+  const handleAreaDragEnd = (id, dragInfo) => {
+    const updatedArea = areas.find(area => area.id === id);
+    if (updatedArea) {
+      updateArea({
+        ...updatedArea,
+        position: {
+          x: updatedArea.position.x + dragInfo.offset.x / scale,
+          y: updatedArea.position.y + dragInfo.offset.y / scale
+        }
+      });
+    }
+  };
+
+  const handleNoteDragEnd = (id, dragInfo) => {
+    const updatedNote = notes.find(note => note.id === id);
+    if (updatedNote) {
+      updateNote({
+        ...updatedNote,
+        position: {
+          x: updatedNote.position.x + dragInfo.offset.x / scale,
+          y: updatedNote.position.y + dragInfo.offset.y / scale
+        }
+      });
+    }
   };
 
   return (
@@ -208,18 +317,6 @@ export const ModelDesigner = () => {
         </Button>
       </div>
       
-      <div className="absolute top-4 right-4 z-30">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsPaletteCollapsed(!isPaletteCollapsed)}
-          className="bg-white border border-gray-200 shadow-sm"
-        >
-          {isPaletteCollapsed ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-          {isPaletteCollapsed ? "" : " Hide Fields"}
-        </Button>
-      </div>
-      
       <div
         className={cn(
           "absolute right-0 top-16 z-20 transition-transform duration-300 ease-in-out",
@@ -262,21 +359,37 @@ export const ModelDesigner = () => {
               transformOrigin: "0 0"
             }}
           >
-            <div className="absolute inset-0 grid grid-cols-[repeat(50,20px)] grid-rows-[repeat(50,20px)] opacity-20">
-              {Array.from({ length: 50 }).map((_, row) => (
-                Array.from({ length: 50 }).map((_, col) => (
-                  <div 
-                    key={`${row}-${col}`}
-                    className="border-[0.5px] border-slate-300"
-                  />
-                ))
-              ))}
-            </div>
+            {isGridVisible && (
+              <div className="absolute inset-0 grid grid-cols-[repeat(50,20px)] grid-rows-[repeat(50,20px)] opacity-20">
+                {Array.from({ length: 50 }).map((_, row) => (
+                  Array.from({ length: 50 }).map((_, col) => (
+                    <div 
+                      key={`${row}-${col}`}
+                      className="border-[0.5px] border-slate-300"
+                    />
+                  ))
+                ))}
+              </div>
+            )}
             
+            {/* Areas go at the bottom layer */}
+            {areas.map((area) => (
+              <CanvasArea
+                key={area.id}
+                area={area}
+                onDragEnd={(_, info) => handleAreaDragEnd(area.id, info)}
+                onUpdate={updateArea}
+                onDelete={deleteArea}
+                scale={scale}
+              />
+            ))}
+            
+            {/* Relationships */}
             {relationships.map((rel) => (
               <Relationship key={rel.id} relationship={rel} tables={tables} />
             ))}
             
+            {/* Tables */}
             {tables.map((table) => (
               <TableCard 
                 key={table.id}
@@ -290,6 +403,18 @@ export const ModelDesigner = () => {
                     }
                   );
                 }}
+                scale={scale}
+              />
+            ))}
+            
+            {/* Notes go on the top layer */}
+            {notes.map((note) => (
+              <CanvasNote
+                key={note.id}
+                note={note}
+                onDragEnd={(_, info) => handleNoteDragEnd(note.id, info)}
+                onUpdate={updateNote}
+                onDelete={deleteNote}
                 scale={scale}
               />
             ))}

@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef } from "react";
+import { motion, useMotionValue } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Pencil, MoreVertical, Trash2, Plus, GripVertical, Database, Copy } from "lucide-react";
+import { Pencil, MoreVertical, Trash2, Plus, GripVertical, Database, Copy, Move } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FieldRow } from "@/components/FieldRow";
 import { useModelContext } from "@/contexts/ModelContext";
@@ -20,10 +20,16 @@ import { useToast } from "@/hooks/use-toast";
 
 export const TableCard = ({ table, onDragEnd, scale }) => {
   const { toast } = useToast();
-  const { updateTableName, removeTable, addFieldToTable, addTable } = useModelContext();
+  const { updateTableName, removeTable, addFieldToTable, addTable, updateField } = useModelContext();
   const [isEditing, setIsEditing] = useState(false);
   const [tableName, setTableName] = useState(table.name);
   const [isAddReferenceOpen, setIsAddReferenceOpen] = useState(false);
+  
+  // For resizing
+  const resizeRef = useRef(null);
+  const width = useMotionValue(300);
+  const height = useMotionValue(table.fields.length * 40 + 120);
+  const isResizing = useRef(false);
 
   const handleNameChange = (e) => {
     setTableName(e.target.value);
@@ -68,6 +74,49 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
     });
   };
 
+  const handleResizeStart = (e) => {
+    e.stopPropagation();
+    isResizing.current = true;
+  };
+
+  const handleResize = (e) => {
+    if (!isResizing.current) return;
+    
+    const dx = e.movementX / scale;
+    const dy = e.movementY / scale;
+    
+    width.set(Math.max(width.get() + dx, 300));
+    height.set(Math.max(height.get() + dy, 150));
+    
+    e.preventDefault();
+  };
+
+  const handleResizeEnd = () => {
+    isResizing.current = false;
+  };
+
+  const handleMoveFieldUp = (index) => {
+    if (index > 0) {
+      const fields = [...table.fields];
+      const temp = fields[index - 1];
+      fields[index - 1] = fields[index];
+      fields[index] = temp;
+      updateField(table.id, fields[index - 1].id, { ...fields[index - 1], index: index - 1 });
+      updateField(table.id, fields[index].id, { ...fields[index], index: index });
+    }
+  };
+
+  const handleMoveFieldDown = (index) => {
+    if (index < table.fields.length - 1) {
+      const fields = [...table.fields];
+      const temp = fields[index + 1];
+      fields[index + 1] = fields[index];
+      fields[index] = temp;
+      updateField(table.id, fields[index + 1].id, { ...fields[index + 1], index: index + 1 });
+      updateField(table.id, fields[index].id, { ...fields[index], index: index });
+    }
+  };
+
   return (
     <motion.div
       drag
@@ -75,7 +124,11 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
       onDragEnd={onDragEnd}
       initial={{ x: table.position.x, y: table.position.y }}
       animate={{ x: table.position.x, y: table.position.y }}
-      style={{ position: "absolute", width: "300px" }}
+      style={{ 
+        position: "absolute",
+        width: width,
+        height: "auto"
+      }}
       className="cursor-move select-none"
     >
       <Card className="shadow-md border-2 border-indigo-100 overflow-hidden">
@@ -97,8 +150,9 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
             </div>
           ) : (
             <CardTitle
-              className="text-sm flex-1 font-medium hover:text-indigo-700 cursor-pointer"
+              className="text-sm flex-1 font-medium hover:text-indigo-700 cursor-pointer truncate"
               onClick={() => setIsEditing(true)}
+              title={table.name}
             >
               {table.name}
             </CardTitle>
@@ -136,6 +190,9 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
                 field={field}
                 tableId={table.id}
                 isLast={index === table.fields.length - 1}
+                fieldIndex={index}
+                onMoveUp={handleMoveFieldUp}
+                onMoveDown={handleMoveFieldDown}
               />
             ))}
           </div>
@@ -152,6 +209,9 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
                   type: "text",
                   required: false,
                   unique: false,
+                  isPrimary: false,
+                  description: "",
+                  defaultValue: "",
                 });
               }}
             >
@@ -172,6 +232,18 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
         </CardContent>
       </Card>
       
+      {/* Resize handle */}
+      <div
+        ref={resizeRef}
+        className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
+        onMouseDown={handleResizeStart}
+        onMouseMove={handleResize}
+        onMouseUp={handleResizeEnd}
+        onMouseLeave={handleResizeEnd}
+      >
+        <div className="w-2 h-2 border-b-2 border-r-2 border-indigo-400" />
+      </div>
+
       <AddReferenceDialog
         open={isAddReferenceOpen}
         onOpenChange={setIsAddReferenceOpen}
