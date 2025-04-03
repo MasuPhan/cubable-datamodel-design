@@ -14,15 +14,14 @@ export const FieldTypePalette = ({ setIsDraggingField }) => {
   // Group field types by category
   const fieldTypeCategories = {
     all: fieldTypes,
-    basic: fieldTypes.filter(f => ["id", "text", "longText", "email", "number", "boolean", "date", "select"].includes(f.type)),
-    advanced: fieldTypes.filter(f => ["image", "file", "json", "formula", "richText", "url", "phone", "currency"].includes(f.type)),
-    reference: fieldTypes.filter(f => ["reference", "referenceTwo"].includes(f.type))
+    basic: fieldTypes.filter(f => ["text", "longText", "email", "number", "checkbox", "date", "select"].includes(f.value)),
+    advanced: fieldTypes.filter(f => ["image", "file", "json", "formula", "richText", "url", "phone", "currency"].includes(f.value))
   };
   
   // Filter field types by search query
   const filteredFieldTypes = fieldTypeCategories[activeTab].filter(fieldType => 
     fieldType.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    fieldType.type.toLowerCase().includes(searchQuery.toLowerCase())
+    fieldType.value.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleDragStart = (e, fieldType) => {
@@ -63,16 +62,16 @@ export const FieldTypePalette = ({ setIsDraggingField }) => {
           {filteredFieldTypes.length > 0 ? (
             filteredFieldTypes.map((field) => (
               <div
-                key={field.type}
+                key={field.value}
                 draggable
-                onDragStart={(e) => handleDragStart(e, field.type)}
+                onDragStart={(e) => handleDragStart(e, field.value)}
                 onDragEnd={handleDragEnd}
                 className="flex flex-col items-center bg-slate-50 hover:bg-slate-100 
                            rounded-md p-3 cursor-grab border border-slate-200 
                            transition-colors duration-200"
               >
                 <div className="text-indigo-600 mb-2">
-                  <field.Icon size={20} />
+                  <field.icon size={20} />
                 </div>
                 <span className="text-xs font-medium text-center text-slate-700 truncate max-w-full">
                   {field.label}
@@ -81,7 +80,7 @@ export const FieldTypePalette = ({ setIsDraggingField }) => {
                   variant="outline" 
                   className="mt-1 text-[10px] h-4 px-1 border-indigo-200 text-indigo-700 bg-indigo-50"
                 >
-                  {field.type}
+                  {field.value}
                 </Badge>
               </div>
             ))
