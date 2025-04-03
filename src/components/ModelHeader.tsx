@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Download, Upload, FileJson, FileText, ChevronDown, Undo, Redo } from "lucide-react";
+import { Plus, Download, Upload, FileJson, FileText, ChevronDown, Undo, Redo, Database } from "lucide-react";
 import { templateModels } from "@/lib/templates";
 import { useToast } from "@/hooks/use-toast";
 import { useModelContext } from "@/contexts/ModelContext";
@@ -31,13 +32,13 @@ export const ModelHeader = () => {
           const json = JSON.parse(event.target?.result as string);
           importModel(json);
           toast({
-            title: "Import thành công",
-            description: "Data model đã được nhập thành công"
+            title: "Import successful",
+            description: "Data model has been imported successfully"
           });
         } catch (error) {
           toast({
-            title: "Lỗi import",
-            description: "File không hợp lệ",
+            title: "Import error",
+            description: "Invalid file format",
             variant: "destructive"
           });
         }
@@ -60,15 +61,15 @@ export const ModelHeader = () => {
     URL.revokeObjectURL(url);
     
     toast({
-      title: "Export thành công",
-      description: "Data model đã được lưu thành công"
+      title: "Export successful",
+      description: "Data model has been saved successfully"
     });
   };
   
   const handleAddTable = () => {
     addTable({
       id: `table-${Date.now()}`,
-      name: "Bảng mới",
+      name: "New Table",
       fields: [
         {
           id: `field-${Date.now()}`,
@@ -85,8 +86,8 @@ export const ModelHeader = () => {
   const loadTemplate = (template) => {
     importModel(template);
     toast({
-      title: "Mẫu đã được tải",
-      description: `Mẫu "${template.name}" đã được tạo thành công`
+      title: "Template loaded",
+      description: `Template "${template.name}" has been created successfully`
     });
   };
 
@@ -103,7 +104,7 @@ export const ModelHeader = () => {
             className="h-8"
           >
             <Undo size={16} className="mr-1" />
-            Hoàn tác
+            Undo
           </Button>
           <Button 
             variant="ghost" 
@@ -113,7 +114,7 @@ export const ModelHeader = () => {
             className="h-8"
           >
             <Redo size={16} className="mr-1" />
-            Làm lại
+            Redo
           </Button>
         </div>
       </div>
@@ -146,7 +147,7 @@ export const ModelHeader = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Mẫu dữ liệu</DropdownMenuLabel>
+            <DropdownMenuLabel>Data Templates</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {templateModels.map((template) => (
               <DropdownMenuItem 
@@ -161,10 +162,10 @@ export const ModelHeader = () => {
         
         <Button 
           onClick={handleAddTable}
-          className="flex items-center"
+          className="flex items-center bg-indigo-600 hover:bg-indigo-700"
         >
           <Plus size={16} className="mr-2" />
-          Thêm bảng
+          Add Table
         </Button>
       </div>
     </header>

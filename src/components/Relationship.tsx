@@ -2,6 +2,8 @@
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowRight, ArrowLeftRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Relationship = ({ relationship, tables }) => {
   const sourceTable = tables.find((t) => t.id === relationship.sourceTableId);
@@ -36,6 +38,13 @@ export const Relationship = ({ relationship, tables }) => {
   const midX = (sourceCenter.x + targetCenter.x) / 2;
   const midY = (sourceCenter.y + targetCenter.y) / 2;
   
+  // Add some curvature to the path
+  const curvature = 0.2;
+  const controlPoint = {
+    x: midX + curvature * dy,
+    y: midY - curvature * dx
+  };
+  
   // Calculate arrow direction for marker
   const angle = Math.atan2(dy, dx) * 180 / Math.PI;
   
@@ -64,6 +73,8 @@ export const Relationship = ({ relationship, tables }) => {
     
     return `${sourceTable.name}.${sourceFieldName} → ${targetTable.name}.${targetFieldName}`;
   };
+
+  const pathId = `path-${relationship.id}`;
 
   return (
     <div className="absolute inset-0 pointer-events-none">
@@ -94,11 +105,17 @@ export const Relationship = ({ relationship, tables }) => {
               <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" className="text-purple-500" />
             </marker>
           )}
+          
+          <filter id={`glow-${relationship.id}`} x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
         </defs>
         
         {/* Main relationship line */}
         <path
-          d={`M${sourceCenter.x},${sourceCenter.y} L${targetCenter.x},${targetCenter.y}`}
+          id={pathId}
+          d={`M${sourceCenter.x},${sourceCenter.y} Q${controlPoint.x},${controlPoint.y} ${targetCenter.x},${targetCenter.y}`}
           stroke="currentColor"
           strokeWidth="2"
           strokeDasharray={relationship.isReference ? "0" : "4"} 
@@ -109,31 +126,41 @@ export const Relationship = ({ relationship, tables }) => {
           markerStart={relationship.isTwoWay ? `url(#arrow-back-${relationship.id})` : ""}
         />
         
-        <foreignObject
-          x={midX - 60}
-          y={midY - 12}
-          width="120" 
-          height="24"
-        >
-          <div 
-            className={cn(
-              "bg-white border rounded-full px-3 py-0.5 text-xs flex items-center justify-center shadow-sm",
-              relationship.isTwoWay 
-                ? "border-purple-200 text-purple-700" 
-                : "border-indigo-200 text-indigo-700"
-            )}
-            title={getRelationshipDetails()}
+        <TooltipProvider>
+          <foreignObject
+            x={midX - 60}
+            y={midY - 15}
+            width="120" 
+            height="30"
           >
-            <span className="mr-1">
-              {relationship.isTwoWay 
-                ? <ArrowLeftRight className="inline-block w-3 h-3 mr-1" /> 
-                : <ArrowRight className="inline-block w-3 h-3 mr-1" />}
-            </span>
-            {relationship.isReference 
-              ? (relationship.isTwoWay ? "Two-way Ref" : "One-way Ref") 
-              : getRelationshipType()}
-          </div>
-        </foreignObject>
+            <div className="flex items-center justify-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div 
+                    className={cn(
+                      "bg-white border rounded-full px-3 py-0.5 text-xs flex items-center justify-center shadow-sm",
+                      relationship.isTwoWay 
+                        ? "border-purple-200 text-purple-700" 
+                        : "border-indigo-200 text-indigo-700"
+                    )}
+                  >
+                    <span className="mr-1">
+                      {relationship.isTwoWay 
+                        ? <ArrowLeftRight className="inline-block w-3 h-3 mr-1" /> 
+                        : <ArrowRight className="inline-block w-3 h-3 mr-1" />}
+                    </span>
+                    {relationship.isReference 
+                      ? (relationship.isTwoWay ? "Two-way Ref" : "One-way Ref") 
+                      : getRelationshipType()}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="text-xs p-2 max-w-[300px]">
+                  {getRelationshipDetails()}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </foreignObject>
+        </TooltipProvider>
       </svg>
     </div>
   );

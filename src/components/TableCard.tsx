@@ -11,14 +11,16 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Pencil, MoreVertical, Trash2, Plus, GripVertical, Database } from "lucide-react";
+import { Pencil, MoreVertical, Trash2, Plus, GripVertical, Database, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FieldRow } from "@/components/FieldRow";
 import { useModelContext } from "@/contexts/ModelContext";
 import { AddReferenceDialog } from "@/components/AddReferenceDialog";
+import { useToast } from "@/hooks/use-toast";
 
 export const TableCard = ({ table, onDragEnd, scale }) => {
-  const { updateTableName, removeTable, addFieldToTable } = useModelContext();
+  const { toast } = useToast();
+  const { updateTableName, removeTable, addFieldToTable, addTable } = useModelContext();
   const [isEditing, setIsEditing] = useState(false);
   const [tableName, setTableName] = useState(table.name);
   const [isAddReferenceOpen, setIsAddReferenceOpen] = useState(false);
@@ -40,6 +42,30 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
 
   const handleDelete = () => {
     removeTable(table.id);
+    toast({
+      title: "Table deleted",
+      description: `Table "${table.name}" has been removed`
+    });
+  };
+  
+  const handleDuplicate = () => {
+    const newTableId = `table-${Date.now()}`;
+    const newFields = table.fields.map(field => ({
+      ...field,
+      id: `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    }));
+    
+    addTable({
+      id: newTableId,
+      name: `${table.name} Copy`,
+      fields: newFields,
+      position: { x: table.position.x + 30, y: table.position.y + 30 },
+    });
+    
+    toast({
+      title: "Table duplicated",
+      description: `Table "${table.name}" has been duplicated`
+    });
   };
 
   return (
@@ -50,11 +76,11 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
       initial={{ x: table.position.x, y: table.position.y }}
       animate={{ x: table.position.x, y: table.position.y }}
       style={{ position: "absolute", width: "300px" }}
-      className="cursor-move"
+      className="cursor-move select-none"
     >
-      <Card className="shadow-md border-2 border-indigo-100">
+      <Card className="shadow-md border-2 border-indigo-100 overflow-hidden">
         <CardHeader className="p-3 bg-indigo-50 flex flex-row items-center space-y-0 gap-2">
-          <div className="cursor-move pr-2">
+          <div className="cursor-move pr-2 hover:text-indigo-700">
             <GripVertical size={16} className="text-gray-400" />
           </div>
           
@@ -71,7 +97,7 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
             </div>
           ) : (
             <CardTitle
-              className="text-sm flex-1 font-medium"
+              className="text-sm flex-1 font-medium hover:text-indigo-700 cursor-pointer"
               onClick={() => setIsEditing(true)}
             >
               {table.name}
@@ -84,11 +110,16 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
                 <MoreVertical size={14} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => setIsEditing(true)}>
                 <Pencil size={14} className="mr-2" />
                 Rename
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDuplicate}>
+                <Copy size={14} className="mr-2" />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleDelete} className="text-red-600">
                 <Trash2 size={14} className="mr-2" />
                 Delete Table
