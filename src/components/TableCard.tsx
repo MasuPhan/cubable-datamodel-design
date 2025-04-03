@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, useMotionValue } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Pencil, MoreVertical, Trash2, Plus, GripVertical, Database, Copy, Move } from "lucide-react";
+import { Pencil, MoreVertical, Trash2, Plus, GripVertical, Database, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FieldRow } from "@/components/FieldRow";
 import { useModelContext } from "@/contexts/ModelContext";
@@ -27,9 +27,21 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
   
   // For resizing
   const resizeRef = useRef(null);
-  const width = useMotionValue(300);
-  const height = useMotionValue(table.fields.length * 40 + 120);
+  const width = useMotionValue(table.width || 300);
+  const height = useMotionValue(table.height || (table.fields.length * 40 + 120));
   const isResizing = useRef(false);
+  
+  // Listen for reference dialog open events
+  useEffect(() => {
+    const handleOpenReferenceDialog = (e) => {
+      if (e.detail.sourceTableId === table.id) {
+        setIsAddReferenceOpen(true);
+      }
+    };
+    
+    window.addEventListener('openReferenceDialog', handleOpenReferenceDialog);
+    return () => window.removeEventListener('openReferenceDialog', handleOpenReferenceDialog);
+  }, [table.id]);
 
   const handleNameChange = (e) => {
     setTableName(e.target.value);
@@ -66,6 +78,7 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
       name: `${table.name} Copy`,
       fields: newFields,
       position: { x: table.position.x + 30, y: table.position.y + 30 },
+      width: width.get(),
     });
     
     toast({
@@ -88,11 +101,30 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
     width.set(Math.max(width.get() + dx, 300));
     height.set(Math.max(height.get() + dy, 150));
     
+    // Update table dimensions in the context
+    updateTableDimensions();
+    
     e.preventDefault();
   };
 
   const handleResizeEnd = () => {
-    isResizing.current = false;
+    if (isResizing.current) {
+      isResizing.current = false;
+      // Update final dimensions in context
+      updateTableDimensions();
+    }
+  };
+  
+  const updateTableDimensions = () => {
+    const dimensions = {
+      width: width.get(),
+      height: height.get()
+    };
+    
+    // Update the table dimensions in the context
+    // This function should be defined in your ModelContext
+    table.width = dimensions.width;
+    table.height = dimensions.height;
   };
 
   const handleMoveFieldUp = (index) => {
@@ -116,6 +148,27 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
       updateField(table.id, fields[index].id, { ...fields[index], index: index });
     }
   };
+
+  // Set up event listeners for mousemove and mouseup on the document
+  useEffect(() => {
+    const handleDocumentMouseMove = (e) => {
+      if (isResizing.current) {
+        handleResize(e);
+      }
+    };
+
+    const handleDocumentMouseUp = () => {
+      handleResizeEnd();
+    };
+
+    document.addEventListener('mousemove', handleDocumentMouseMove);
+    document.addEventListener('mouseup', handleDocumentMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleDocumentMouseMove);
+      document.removeEventListener('mouseup', handleDocumentMouseUp);
+    };
+  }, [scale]); // Add scale as a dependency
 
   return (
     <motion.div
@@ -237,9 +290,6 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
         ref={resizeRef}
         className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
         onMouseDown={handleResizeStart}
-        onMouseMove={handleResize}
-        onMouseUp={handleResizeEnd}
-        onMouseLeave={handleResizeEnd}
       >
         <div className="w-2 h-2 border-b-2 border-r-2 border-indigo-400" />
       </div>

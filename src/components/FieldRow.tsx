@@ -22,8 +22,6 @@ import {
   ArrowLeftRight, 
   Flag,
   KeyRound,
-  ArrowUp,
-  ArrowDown,
   Info 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,6 +38,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 export const FieldRow = ({ field, tableId, isLast, fieldIndex, onMoveUp, onMoveDown }) => {
   const { tables, updateField, removeField } = useModelContext();
@@ -80,6 +80,15 @@ export const FieldRow = ({ field, tableId, isLast, fieldIndex, onMoveUp, onMoveD
         reference: undefined
       };
       updateField(tableId, field.id, updatedField);
+    } else if (type === 'reference' || type === 'referenceTwo') {
+      // Open reference configuration dialog
+      // This will be handled by the AddReferenceDialog component
+      updateField(tableId, field.id, { ...field, type });
+      // We'll implement this in the ModelContext to show the reference dialog
+      const event = new CustomEvent('openReferenceDialog', {
+        detail: { sourceTableId: tableId, sourceFieldId: field.id }
+      });
+      window.dispatchEvent(event);
     } else {
       updateField(tableId, field.id, { ...field, type });
     }
@@ -87,14 +96,6 @@ export const FieldRow = ({ field, tableId, isLast, fieldIndex, onMoveUp, onMoveD
 
   const handleRequiredChange = (checked) => {
     updateField(tableId, field.id, { ...field, required: checked });
-  };
-
-  const handleUniqueChange = (checked) => {
-    updateField(tableId, field.id, { ...field, unique: checked });
-  };
-
-  const handlePrimaryChange = (checked) => {
-    updateField(tableId, field.id, { ...field, isPrimary: checked });
   };
 
   const handleDeleteField = () => {
@@ -232,30 +233,6 @@ export const FieldRow = ({ field, tableId, isLast, fieldIndex, onMoveUp, onMoveD
             R
           </label>
         </div>
-        
-        <div className="flex items-center gap-1" title="Unique">
-          <Checkbox
-            id={`unique-${field.id}`}
-            checked={field.unique}
-            onCheckedChange={handleUniqueChange}
-            className="h-3 w-3"
-          />
-          <label htmlFor={`unique-${field.id}`} className="text-[10px] text-gray-500 cursor-pointer">
-            U
-          </label>
-        </div>
-
-        <div className="flex items-center gap-1" title="Primary Key">
-          <Checkbox
-            id={`primary-${field.id}`}
-            checked={field.isPrimary}
-            onCheckedChange={handlePrimaryChange}
-            className="h-3 w-3"
-          />
-          <label htmlFor={`primary-${field.id}`} className="text-[10px] text-gray-500 cursor-pointer">
-            P
-          </label>
-        </div>
       </div>
 
       <Popover open={isDescriptionOpen} onOpenChange={setIsDescriptionOpen}>
@@ -268,20 +245,38 @@ export const FieldRow = ({ field, tableId, isLast, fieldIndex, onMoveUp, onMoveD
             <Info size={12} />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-4">
-          <div className="space-y-2">
+        <PopoverContent className="w-96 p-4">
+          <div className="space-y-4">
             <h4 className="font-medium text-sm">Field Properties</h4>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`unique-${field.id}`}
+                  checked={field.unique}
+                  onCheckedChange={(checked) => updateField(tableId, field.id, { ...field, unique: checked })}
+                />
+                <Label htmlFor={`unique-${field.id}`} className="text-xs">Unique</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`primary-${field.id}`}
+                  checked={field.isPrimary}
+                  onCheckedChange={(checked) => updateField(tableId, field.id, { ...field, isPrimary: checked })}
+                />
+                <Label htmlFor={`primary-${field.id}`} className="text-xs">Primary Key</Label>
+              </div>
+            </div>
             <div className="space-y-1">
-              <label className="text-xs text-gray-500">Description</label>
-              <Input
+              <Label className="text-xs text-gray-500">Description</Label>
+              <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="h-8 text-xs"
+                className="min-h-[80px] text-xs resize-y"
                 placeholder="Enter field description"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-gray-500">Default Value</label>
+              <Label className="text-xs text-gray-500">Default Value</Label>
               <Input
                 value={defaultValue}
                 onChange={(e) => setDefaultValue(e.target.value)}
@@ -309,29 +304,6 @@ export const FieldRow = ({ field, tableId, isLast, fieldIndex, onMoveUp, onMoveD
           </div>
         </PopoverContent>
       </Popover>
-
-      <div className="flex">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onMoveUp(fieldIndex)}
-          disabled={fieldIndex === 0}
-          className="h-6 w-6 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50"
-          title="Move Up"
-        >
-          <ArrowUp size={12} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onMoveDown(fieldIndex)}
-          disabled={isLast}
-          className="h-6 w-6 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50"
-          title="Move Down"
-        >
-          <ArrowDown size={12} />
-        </Button>
-      </div>
       
       <Button
         variant="ghost"

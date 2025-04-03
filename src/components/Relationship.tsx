@@ -18,13 +18,16 @@ export const Relationship = ({ relationship, tables }) => {
   }
 
   // Calculate position of source and target table centers
+  const sourceWidth = sourceTable.width || 300;
+  const targetWidth = targetTable.width || 300;
+  
   const sourceCenter = {
-    x: sourcePos.x + 150, // Half of table width
+    x: sourcePos.x + sourceWidth / 2,
     y: sourcePos.y + 40,  // Approximate half of table header height
   };
   
   const targetCenter = {
-    x: targetPos.x + 150, // Half of table width
+    x: targetPos.x + targetWidth / 2,
     y: targetPos.y + 40,  // Approximate half of table header height
   };
 
@@ -44,9 +47,6 @@ export const Relationship = ({ relationship, tables }) => {
     x: midX + curvature * dy,
     y: midY - curvature * dx
   };
-  
-  // Calculate arrow direction for marker
-  const angle = Math.atan2(dy, dx) * 180 / Math.PI;
   
   const sourceField = sourceTable.fields.find(f => f.id === relationship.sourceFieldId);
   const targetField = relationship.targetFieldId 
@@ -105,11 +105,6 @@ export const Relationship = ({ relationship, tables }) => {
               <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" className="text-purple-500" />
             </marker>
           )}
-          
-          <filter id={`glow-${relationship.id}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
         </defs>
         
         {/* Main relationship line */}

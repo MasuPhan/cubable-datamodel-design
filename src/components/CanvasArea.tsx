@@ -118,12 +118,12 @@ export const CanvasArea = ({ area, onDragEnd, onUpdate, onDelete, scale }) => {
                       )}
                       onClick={() => handleColorChange(colorName)}
                       style={{
-                        backgroundColor: `var(--${colorName}-200, #${colorName === 'indigo' ? 'c7d2fe' : 
-                                             colorName === 'amber' ? 'fde68a' : 
-                                             colorName === 'emerald' ? 'a7f3d0' : 
-                                             colorName === 'rose' ? 'fecdd3' : 
-                                             colorName === 'blue' ? 'bfdbfe' : 
-                                             colorName === 'purple' ? 'd8b4fe' : 'c7d2fe'})`
+                        backgroundColor: colorName === 'indigo' ? 'var(--indigo-200, #c7d2fe)' : 
+                                        colorName === 'amber' ? 'var(--amber-200, #fde68a)' : 
+                                        colorName === 'emerald' ? 'var(--emerald-200, #a7f3d0)' : 
+                                        colorName === 'rose' ? 'var(--rose-200, #fecdd3)' : 
+                                        colorName === 'blue' ? 'var(--blue-200, #bfdbfe)' : 
+                                        'var(--purple-200, #d8b4fe)'
                       }}
                     />
                   ))}

@@ -33,6 +33,9 @@ import {
   Maximize,
   Minimize,
   Grid,
+  Cuboid,
+  LayoutGrid,
+  StickyNote,
 } from "lucide-react";
 
 import { ShareDialog } from "@/components/ShareDialog";
@@ -57,6 +60,11 @@ export const AppMenu = ({
   return (
     <>
       <Menubar className="rounded-none border-b border-none px-2 lg:px-4">
+        <div className="flex items-center mr-4 text-indigo-700 font-bold">
+          <Cuboid className="h-5 w-5 mr-2 text-indigo-600" />
+          Cubable DataModel Design
+        </div>
+        
         <MenubarMenu>
           <MenubarTrigger className="font-bold">File</MenubarTrigger>
           <MenubarContent>
@@ -65,10 +73,12 @@ export const AppMenu = ({
               <MenubarShortcut>⌘T</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={onAddArea}>
+              <LayoutGrid className="mr-2 h-4 w-4" />
               New Area
               <MenubarShortcut>⌘A</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={onAddNote}>
+              <StickyNote className="mr-2 h-4 w-4" />
               New Note
               <MenubarShortcut>⌘N</MenubarShortcut>
             </MenubarItem>

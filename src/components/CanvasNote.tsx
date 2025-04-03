@@ -4,8 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { MoreVertical, Trash2, GripVertical, StickyNote } from "lucide-react";
+import { Trash2, GripVertical, StickyNote, MoreVertical } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -93,11 +92,11 @@ export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale }) => {
                       )}
                       onClick={() => handleColorChange(colorName)}
                       style={{
-                        backgroundColor: `var(--${colorName}-200, #${colorName === 'yellow' ? 'fef08a' : 
-                                             colorName === 'blue' ? 'bfdbfe' : 
-                                             colorName === 'green' ? 'bbf7d0' : 
-                                             colorName === 'pink' ? 'fbcfe8' : 
-                                             colorName === 'purple' ? 'd8b4fe' : 'fef08a'})`
+                        backgroundColor: colorName === 'yellow' ? 'var(--yellow-200, #fef08a)' : 
+                                       colorName === 'blue' ? 'var(--blue-200, #bfdbfe)' : 
+                                       colorName === 'green' ? 'var(--green-200, #bbf7d0)' : 
+                                       colorName === 'pink' ? 'var(--pink-200, #fbcfe8)' : 
+                                       'var(--purple-200, #d8b4fe)'
                       }}
                     />
                   ))}
@@ -118,7 +117,7 @@ export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale }) => {
               <Textarea
                 value={content}
                 onChange={handleContentChange}
-                className="min-h-[100px] text-sm"
+                className="min-h-[100px] text-sm resize-y"
                 autoFocus
               />
               <div className="flex justify-end gap-2">
