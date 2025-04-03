@@ -149,7 +149,7 @@ export const Relationship = ({ relationship, tables }) => {
                       : getRelationshipType()}
                   </div>
                 </TooltipTrigger>
-                <TooltipContent className="text-xs p-2 max-w-[300px]">
+                <TooltipContent className="text-xs p-2 max-w-[300px] bg-white border shadow-sm">
                   {getRelationshipDetails()}
                 </TooltipContent>
               </Tooltip>
