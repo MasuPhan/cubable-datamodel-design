@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { fieldTypes, fieldTypeCategories } from "@/lib/fieldTypes";
+import { fieldTypes } from "@/lib/fieldTypes";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,12 +11,18 @@ export const FieldTypePalette = ({ setIsDraggingField }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
+  // Group field types by category
+  const fieldTypeCategories = {
+    all: fieldTypes,
+    basic: fieldTypes.filter(f => ["text", "longText", "email", "number", "checkbox", "date", "select"].includes(f.value)),
+    advanced: fieldTypes.filter(f => ["image", "file", "json", "formula", "richText", "url", "phone", "currency"].includes(f.value))
+  };
+  
   // Filter field types by search query
-  const filteredFieldTypes = (activeTab === "all" ? fieldTypes : fieldTypeCategories[activeTab]?.types || [])
-    .filter(fieldType => 
-      fieldType.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      fieldType.value.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  const filteredFieldTypes = fieldTypeCategories[activeTab].filter(fieldType => 
+    fieldType.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    fieldType.value.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleDragStart = (e, fieldType) => {
     e.dataTransfer.setData("fieldType", fieldType);

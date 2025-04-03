@@ -14,19 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen }) => {
   const { toast } = useToast();
-  const { 
-    tables, 
-    relationships, 
-    updateTablePosition, 
-    addFieldToTable, 
-    areas,
-    notes,
-    addArea: contextAddArea,
-    addNote: contextAddNote,
-    updateAreaPosition, 
-    updateNotePosition 
-  } = useModelContext();
-  
+  const { tables, relationships, updateTablePosition, addFieldToTable, addArea, addNote, areas, notes, updateAreaPosition, updateNotePosition } = useModelContext();
   const [isDraggingField, setIsDraggingField] = useState(false);
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -174,7 +162,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       width: 300,
       height: 200
     };
-    contextAddArea(newArea);
+    addArea(newArea);
     toast({
       title: "Area added",
       description: "New area has been added to the canvas"
@@ -192,7 +180,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       },
       width: 200
     };
-    contextAddNote(newNote);
+    addNote(newNote);
     toast({
       title: "Note added",
       description: "New note has been added to the canvas"
@@ -323,7 +311,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       </div>
       
       <div 
-        className="w-full h-full absolute overflow-hidden"
+        className="w-full h-full relative overflow-hidden"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -341,18 +329,16 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
           )}
         >
           <div 
-            className="absolute"
+            className="absolute w-full h-full"
             style={{
               transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-              transformOrigin: "0 0",
-              width: "10000px",
-              height: "10000px"
+              transformOrigin: "0 0"
             }}
           >
             {isGridVisible && (
-              <div className="absolute left-0 top-0 grid grid-cols-[repeat(500,20px)] grid-rows-[repeat(500,20px)] opacity-20">
-                {Array.from({ length: 500 }).map((_, row) => (
-                  Array.from({ length: 500 }).map((_, col) => (
+              <div className="absolute inset-0 grid grid-cols-[repeat(50,20px)] grid-rows-[repeat(50,20px)] opacity-20">
+                {Array.from({ length: 50 }).map((_, row) => (
+                  Array.from({ length: 50 }).map((_, col) => (
                     <div 
                       key={`${row}-${col}`}
                       className="border-[0.5px] border-slate-300"

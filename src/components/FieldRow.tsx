@@ -1,187 +1,319 @@
 
-// I'll create this file with the updated field row component
-import { useState, useEffect } from "react";
-import { useModelContext } from "@/contexts/ModelContext";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
+import { Badge } from "@/components/ui/badge";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { ChevronUp, ChevronDown, MoreVertical, Trash2, Key } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  Trash2, 
+  ChevronDown, 
+  GripVertical, 
+  Check, 
+  Link, 
+  ArrowRight, 
+  Database, 
+  ArrowLeftRight, 
+  Flag,
+  KeyRound,
+  Info 
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FieldInfo } from "@/components/FieldInfo";
+import { fieldTypes, getFieldIcon } from "@/lib/fieldTypes";
+import { useModelContext } from "@/contexts/ModelContext";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 export const FieldRow = ({ field, tableId, isLast, fieldIndex, onMoveUp, onMoveDown }) => {
-  const { updateField, removeField } = useModelContext();
-  const [isEditing, setIsEditing] = useState(false);
+  const { tables, updateField, removeField } = useModelContext();
+  const [isEditingName, setIsEditingName] = useState(false);
   const [fieldName, setFieldName] = useState(field.name);
-  const [isRequired, setIsRequired] = useState(field.required || false);
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
+  const [description, setDescription] = useState(field.description || "");
+  const [defaultValue, setDefaultValue] = useState(field.defaultValue || "");
+  
+  const FieldIcon = getFieldIcon(field.type);
+  const isReference = field.type === 'reference' || field.type === 'referenceTwo';
+  const targetTable = isReference && field.reference?.tableId 
+    ? tables.find(t => t.id === field.reference.tableId)
+    : null;
 
-  useEffect(() => {
-    // Handle keyboard events for moving field up/down
-    const handleKeyDown = (e) => {
-      // Only act if we're editing this field
-      if (!isEditing) return;
-      
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        onMoveUp(fieldIndex);
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        onMoveDown(fieldIndex);
-      }
-    };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isEditing, fieldIndex, onMoveUp, onMoveDown]);
-
-  const handleNameChange = (e) => {
+  const handleFieldNameChange = (e) => {
     setFieldName(e.target.value);
   };
 
-  const handleNameSave = () => {
+  const saveFieldName = () => {
     updateField(tableId, field.id, { ...field, name: fieldName });
-    setIsEditing(false);
+    setIsEditingName(false);
   };
 
-  const handleKeyDown = (e) => {
+  const handleFieldNameKeyDown = (e) => {
     if (e.key === "Enter") {
-      handleNameSave();
+      saveFieldName();
     }
   };
 
-  const handleRequiredChange = (e) => {
-    const newValue = e.target.checked;
-    setIsRequired(newValue);
-    updateField(tableId, field.id, { ...field, required: newValue });
-  };
-
-  const getFieldTypeIconColor = () => {
-    switch (field.type) {
-      case 'text':
-        return 'text-blue-500';
-      case 'number':
-        return 'text-green-500';
-      case 'id':
-        return 'text-purple-500';
-      case 'boolean':
-        return 'text-yellow-500';
-      case 'date':
-        return 'text-pink-500';
-      case 'reference':
-      case 'referenceTwo':
-        return 'text-indigo-500';
-      default:
-        return 'text-gray-500';
+  const handleTypeChange = (type) => {
+    if (isReference && type !== 'reference' && type !== 'referenceTwo') {
+      // If changing from reference type to non-reference type,
+      // clear the reference data
+      const updatedField = { 
+        ...field, 
+        type,
+        reference: undefined
+      };
+      updateField(tableId, field.id, updatedField);
+    } else if (type === 'reference' || type === 'referenceTwo') {
+      // Open reference configuration dialog
+      // This will be handled by the AddReferenceDialog component
+      updateField(tableId, field.id, { ...field, type });
+      // We'll implement this in the ModelContext to show the reference dialog
+      const event = new CustomEvent('openReferenceDialog', {
+        detail: { sourceTableId: tableId, sourceFieldId: field.id }
+      });
+      window.dispatchEvent(event);
+    } else {
+      updateField(tableId, field.id, { ...field, type });
     }
   };
 
-  const getFieldTypeIcon = () => {
-    switch (field.type) {
-      case 'text':
-        return 'Aa';
-      case 'number':
-        return '123';
-      case 'id':
-        return '#';
-      case 'boolean':
-        return '0|1';
-      case 'date':
-        return '📅';
-      case 'reference':
-      case 'referenceTwo':
-        return '🔗';
-      default:
-        return '?';
+  const handleRequiredChange = (checked) => {
+    updateField(tableId, field.id, { ...field, required: checked });
+  };
+
+  const handleDeleteField = () => {
+    removeField(tableId, field.id);
+  };
+
+  const handleSaveDescription = () => {
+    updateField(tableId, field.id, { ...field, description, defaultValue });
+    setIsDescriptionOpen(false);
+  };
+
+  const handleRowKeyDown = (e) => {
+    // Only handle arrow keys for non-input interactions
+    if (isEditingName) return;
+    
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      onMoveUp(fieldIndex);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      onMoveDown(fieldIndex);
     }
   };
 
   return (
-    <div
+    <div 
       className={cn(
-        "flex items-center p-2 border-b border-slate-100 hover:bg-slate-50 transition-colors",
-        isLast ? "border-b-0" : ""
+        "flex items-center p-2 hover:bg-slate-50 border-b border-slate-100 gap-1",
+        isLast && "border-b-0",
+        field.isPrimary && "bg-indigo-50"
       )}
+      tabIndex={0}
+      onKeyDown={handleRowKeyDown}
     >
-      <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+      <div className="cursor-move px-1">
+        <GripVertical size={14} className="text-gray-400" />
+      </div>
+      
+      {isEditingName ? (
+        <Input
+          value={fieldName}
+          onChange={handleFieldNameChange}
+          onBlur={saveFieldName}
+          onKeyDown={handleFieldNameKeyDown}
+          autoFocus
+          className="h-7 text-xs flex-1 py-0"
+        />
+      ) : (
         <div 
-          className={cn(
-            "text-xs font-bold w-6 h-6 flex items-center justify-center rounded",
-            getFieldTypeIconColor()
-          )}
+          className="flex-1 text-xs px-1 cursor-text truncate"
+          onClick={() => setIsEditingName(true)}
+          title={field.name}
         >
-          {field.isPrimary ? <Key size={14} /> : getFieldTypeIcon()}
+          {field.isPrimary && <KeyRound size={12} className="inline mr-1 text-indigo-600" />}
+          {field.name}
+          {field.description && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info size={12} className="inline ml-1 text-gray-400" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">{field.description}</p>
+                  {field.defaultValue && (
+                    <p className="text-xs text-gray-500 mt-1">Default: {field.defaultValue}</p>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
-      </div>
+      )}
       
-      <div className="flex-1 px-2">
-        {isEditing ? (
-          <Input
-            value={fieldName}
-            onChange={handleNameChange}
-            onBlur={handleNameSave}
-            onKeyDown={handleKeyDown}
-            autoFocus
-            className="h-7 text-sm py-0"
-          />
-        ) : (
-          <div 
-            className="text-sm truncate cursor-pointer"
-            onClick={() => setIsEditing(true)}
-            title={field.name}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={cn(
+              "h-7 text-xs px-2 flex items-center gap-1",
+              isReference && "text-blue-600"  
+            )}
           >
-            {field.name}
-          </div>
-        )}
-      </div>
-      
-      <div className="flex items-center gap-2">
+            <FieldIcon size={14} className={isReference ? "text-blue-500" : "text-gray-600"} />
+            <span className="truncate max-w-[80px]">
+              {fieldTypes.find(t => t.value === field.type)?.label || field.type}
+            </span>
+            <ChevronDown size={12} />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 max-h-[400px] overflow-y-auto">
+          {fieldTypes.map((type) => {
+            const TypeIcon = getFieldIcon(type.value);
+            return (
+              <DropdownMenuItem 
+                key={type.value} 
+                onSelect={() => handleTypeChange(type.value)}
+                className="flex items-center gap-2"
+              >
+                <TypeIcon size={14} className="text-gray-600" />
+                <span>{type.label}</span>
+                {field.type === type.value && (
+                  <Check size={14} className="ml-auto text-green-600" />
+                )}
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {isReference && targetTable && (
         <div className="flex items-center">
-          <input
-            type="checkbox"
-            id={`required-${field.id}`}
-            checked={isRequired}
-            onChange={handleRequiredChange}
-            className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-offset-0 focus:ring-indigo-200 focus:ring-opacity-50"
-          />
-          <label htmlFor={`required-${field.id}`} className="text-xs ml-1">Req.</label>
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap">
+            {field.type === 'referenceTwo' ? (
+              <ArrowLeftRight size={10} />
+            ) : (
+              <ArrowRight size={10} />
+            )}
+            <span className="truncate max-w-[50px]" title={targetTable.name}>
+              {targetTable.name}
+            </span>
+          </Badge>
         </div>
-        
-        <FieldInfo field={field} tableId={tableId} />
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-6 w-6">
-              <MoreVertical size={14} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-32">
-            <DropdownMenuItem onClick={() => onMoveUp(fieldIndex)} disabled={fieldIndex === 0} className="text-xs">
-              <ChevronUp size={14} className="mr-2" />
-              Move Up
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onMoveDown(fieldIndex)} disabled={isLast} className="text-xs">
-              <ChevronDown size={14} className="mr-2" />
-              Move Down
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={() => removeField(tableId, field.id)} 
-              className="text-red-600 text-xs"
-            >
-              <Trash2 size={14} className="mr-2" />
-              Delete Field
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      )}
+
+      <div className="flex items-center gap-1 pl-1">
+        <div className="flex items-center gap-1" title="Required">
+          <Checkbox
+            id={`required-${field.id}`}
+            checked={field.required}
+            onCheckedChange={handleRequiredChange}
+            className="h-3 w-3"
+          />
+          <label htmlFor={`required-${field.id}`} className="text-[10px] text-gray-500 cursor-pointer">
+            R
+          </label>
+        </div>
       </div>
+
+      <Popover open={isDescriptionOpen} onOpenChange={setIsDescriptionOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50"
+          >
+            <Info size={12} />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-96 p-4">
+          <div className="space-y-4">
+            <h4 className="font-medium text-sm">Field Properties</h4>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`unique-${field.id}`}
+                  checked={field.unique}
+                  onCheckedChange={(checked) => updateField(tableId, field.id, { ...field, unique: checked })}
+                />
+                <Label htmlFor={`unique-${field.id}`} className="text-xs">Unique</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`primary-${field.id}`}
+                  checked={field.isPrimary}
+                  onCheckedChange={(checked) => updateField(tableId, field.id, { ...field, isPrimary: checked })}
+                />
+                <Label htmlFor={`primary-${field.id}`} className="text-xs">Primary Key</Label>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-500">Description</Label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="min-h-[80px] text-xs resize-y"
+                placeholder="Enter field description"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-500">Default Value</Label>
+              <Input
+                value={defaultValue}
+                onChange={(e) => setDefaultValue(e.target.value)}
+                className="h-8 text-xs"
+                placeholder="Enter default value"
+              />
+            </div>
+            <div className="flex justify-end space-x-2 pt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsDescriptionOpen(false)}
+                className="text-xs h-7"
+              >
+                Cancel
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={handleSaveDescription}
+                className="text-xs h-7"
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+      
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleDeleteField}
+        className="h-6 w-6 text-gray-400 hover:text-red-600 hover:bg-red-50"
+        disabled={field.type === "id" && field.name === "ID" && field.isPrimary}
+      >
+        <Trash2 size={12} />
+      </Button>
     </div>
   );
 };

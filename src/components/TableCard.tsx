@@ -28,9 +28,8 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
   // For resizing
   const resizeRef = useRef(null);
   const width = useMotionValue(table.width || 300);
+  const height = useMotionValue(table.height || (table.fields.length * 40 + 120));
   const isResizing = useRef(false);
-  const resizeStartPos = useRef({ x: 0 });
-  const resizeStartWidth = useRef(0);
   
   // Listen for reference dialog open events
   useEffect(() => {
@@ -90,48 +89,42 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
 
   const handleResizeStart = (e) => {
     e.stopPropagation();
-    e.preventDefault();
     isResizing.current = true;
-    resizeStartPos.current = { x: e.clientX };
-    resizeStartWidth.current = width.get();
-    
-    // Add transparent overlay to prevent dragging issues during resize
-    const overlay = document.createElement('div');
-    overlay.id = 'resize-overlay';
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.right = '0';
-    overlay.style.bottom = '0';
-    overlay.style.cursor = 'nwse-resize';
-    overlay.style.zIndex = '10000';
-    document.body.appendChild(overlay);
   };
 
   const handleResize = (e) => {
     if (!isResizing.current) return;
     
-    // Calculate the dx in the screen coordinates
-    const dx = (e.clientX - resizeStartPos.current.x) / scale;
+    const dx = e.movementX / scale;
+    const dy = e.movementY / scale;
     
-    // Update the width based on the start width + dx
-    const newWidth = Math.max(resizeStartWidth.current + dx, 300);
-    width.set(newWidth);
+    width.set(Math.max(width.get() + dx, 300));
+    height.set(Math.max(height.get() + dy, 150));
     
-    // Update table width in the table object
-    table.width = newWidth;
+    // Update table dimensions in the context
+    updateTableDimensions();
+    
+    e.preventDefault();
   };
 
   const handleResizeEnd = () => {
     if (isResizing.current) {
       isResizing.current = false;
-      
-      // Remove the overlay
-      const overlay = document.getElementById('resize-overlay');
-      if (overlay) {
-        document.body.removeChild(overlay);
-      }
+      // Update final dimensions in context
+      updateTableDimensions();
     }
+  };
+  
+  const updateTableDimensions = () => {
+    const dimensions = {
+      width: width.get(),
+      height: height.get()
+    };
+    
+    // Update the table dimensions in the context
+    // This function should be defined in your ModelContext
+    table.width = dimensions.width;
+    table.height = dimensions.height;
   };
 
   const handleMoveFieldUp = (index) => {
@@ -295,10 +288,10 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
       {/* Resize handle */}
       <div
         ref={resizeRef}
-        className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize"
+        className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
         onMouseDown={handleResizeStart}
       >
-        <div className="w-3 h-3 border-b-2 border-r-2 border-indigo-400 absolute bottom-1 right-1" />
+        <div className="w-2 h-2 border-b-2 border-r-2 border-indigo-400" />
       </div>
 
       <AddReferenceDialog
