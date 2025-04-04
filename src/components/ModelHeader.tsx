@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { templateModels } from "@/lib/templates";
@@ -15,6 +14,7 @@ export const ModelHeader = ({
   isFullscreen,
   onAddArea,
   onAddNote,
+  onAddTable
 }) => {
   const { toast } = useToast();
   const { addTable, importModel, exportModel, canUndo, canRedo, undo, redo } = useModelContext();
@@ -68,23 +68,7 @@ export const ModelHeader = ({
   };
   
   const handleAddTable = () => {
-    addTable({
-      id: `table-${Date.now()}`,
-      name: "New Table",
-      fields: [
-        {
-          id: `field-${Date.now()}`,
-          name: "ID",
-          type: "id",
-          required: true,
-          unique: true,
-          isPrimary: true,
-          description: "Primary identifier for this record",
-          defaultValue: "",
-        }
-      ],
-      position: { x: 50, y: 50 },
-    });
+    onAddTable();
   };
   
   const loadTemplate = (template) => {
