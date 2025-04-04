@@ -11,7 +11,23 @@ const Index = () => {
   const [isPaletteVisible, setIsPaletteVisible] = useState(true);
   const [isGridVisible, setIsGridVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { addTable, addArea, addNote } = useModelContext();
+  const { 
+    addTable, 
+    addArea, 
+    addNote,
+    tables,
+    areas,
+    notes 
+  } = useModelContext();
+  
+  // Debug context values
+  useEffect(() => {
+    console.log("Index component context values:", { 
+      hasTables: Boolean(tables?.length), 
+      hasAreas: Boolean(areas?.length), 
+      hasNotes: Boolean(notes?.length) 
+    });
+  }, [tables, areas, notes]);
   
   // Get the current viewport dimensions to calculate better initial positions
   const getRandomPosition = () => {
@@ -39,19 +55,22 @@ const Index = () => {
   };
   
   const handleAddArea = () => {
-    console.log("Adding new area");
+    console.log("Index: Adding new area");
     
     const position = getRandomPosition();
-    console.log("Creating area at position:", position);
+    console.log("Index: Creating area at position:", position);
     
-    addArea({
+    const newArea = {
       id: `area-${Date.now()}`,
       title: "New Area",
       color: "indigo",
       position: position,
       width: 300,
       height: 200
-    });
+    };
+    
+    console.log("Index: About to call addArea with:", newArea);
+    addArea(newArea);
     
     toast({
       title: "Area added",
@@ -60,18 +79,21 @@ const Index = () => {
   };
   
   const handleAddNote = () => {
-    console.log("Adding new note");
+    console.log("Index: Adding new note");
     
     const position = getRandomPosition();
-    console.log("Creating note at position:", position);
+    console.log("Index: Creating note at position:", position);
     
-    addNote({
+    const newNote = {
       id: `note-${Date.now()}`,
       content: "Add your note here...",
       color: "yellow",
       position: position,
       width: 200
-    });
+    };
+    
+    console.log("Index: About to call addNote with:", newNote);
+    addNote(newNote);
     
     toast({
       title: "Note added",
@@ -80,12 +102,12 @@ const Index = () => {
   };
 
   const handleAddTable = () => {
-    console.log("Adding new table");
+    console.log("Index: Adding new table");
     
     const position = getRandomPosition();
-    console.log("Creating table at position:", position);
+    console.log("Index: Creating table at position:", position);
     
-    addTable({
+    const newTable = {
       id: `table-${Date.now()}`,
       name: "New Table",
       fields: [
@@ -100,7 +122,10 @@ const Index = () => {
       ],
       position: position,
       width: 300,
-    });
+    };
+    
+    console.log("Index: About to call addTable with:", newTable);
+    addTable(newTable);
     
     toast({
       title: "Table added",
@@ -158,6 +183,15 @@ const Index = () => {
       window.removeEventListener('deleteNote', handleDeleteNote);
     };
   }, []);
+
+  console.log("Index: Rendering with:", {
+    isPaletteVisible,
+    isGridVisible,
+    isFullscreen,
+    tablesCount: tables?.length || 0,
+    areasCount: areas?.length || 0,
+    notesCount: notes?.length || 0
+  });
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50">

@@ -32,7 +32,10 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     tables: tables?.length || 0,
     areas: areas?.length || 0,
     notes: notes?.length || 0,
-    relationships: relationships?.length || 0
+    relationships: relationships?.length || 0,
+    rawTables: tables,
+    rawAreas: areas,
+    rawNotes: notes
   });
   
   const [isDraggingField, setIsDraggingField] = useState(false);
@@ -80,11 +83,13 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   }, []);
 
   const handleTableDragEnd = (id, newPosition) => {
+    console.log("ModelDesigner: Table drag ended, updating position for id:", id, "to:", newPosition);
     updateTablePosition(id, newPosition);
     setSelectedTableId(id);
   };
 
   const handleTableClick = (id) => {
+    console.log("ModelDesigner: Table clicked, id:", id);
     setSelectedTableId(id);
   };
 
@@ -139,7 +144,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     const y = (e.clientY - rect.top) / scale - position.y / scale;
     
     // Find the table (if any) under the drop position
-    const droppedOnTable = tables.find(table => {
+    const droppedOnTable = tables?.find(table => {
       const tableLeft = table.position.x;
       const tableRight = table.position.x + (table.width || 300);
       const tableTop = table.position.y;
@@ -150,6 +155,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     
     if (droppedOnTable) {
       // Add field to the table
+      console.log("ModelDesigner: Field dropped on table, id:", droppedOnTable.id, "field type:", fieldType);
       addFieldToTable(droppedOnTable.id, {
         id: `field-${Date.now()}`,
         name: `New ${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field`,
@@ -178,6 +184,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   };
 
   const handleAddArea = () => {
+    console.log("ModelDesigner: Adding area directly");
     const newArea = {
       id: `area-${Date.now()}`,
       title: "New Area",
@@ -189,6 +196,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       width: 300,
       height: 200
     };
+    console.log("ModelDesigner: About to call addArea with:", newArea);
     addArea(newArea);
     toast({
       title: "Area added",
@@ -197,6 +205,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   };
 
   const handleAddNote = () => {
+    console.log("ModelDesigner: Adding note directly");
     const newNote = {
       id: `note-${Date.now()}`,
       content: "Add your note here...",
@@ -207,6 +216,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       },
       width: 200
     };
+    console.log("ModelDesigner: About to call addNote with:", newNote);
     addNote(newNote);
     toast({
       title: "Note added",
@@ -217,6 +227,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   const handleAddFieldType = (fieldType) => {
     if (selectedTableId) {
       // If a table is selected, add field to that table
+      console.log("ModelDesigner: Adding field to selected table, id:", selectedTableId, "field type:", fieldType);
       addFieldToTable(selectedTableId, {
         id: `field-${Date.now()}`,
         name: `New ${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field`,
@@ -234,6 +245,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     } else {
       // If no table is selected, create a new table with this field
       const newTableId = `table-${Date.now()}`;
+      console.log("ModelDesigner: Creating new table with field, id:", newTableId, "field type:", fieldType);
       addTable({
         id: newTableId,
         name: "New Table",
@@ -274,6 +286,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   const handleAreaDragEnd = (id, dragInfo) => {
     const area = areas?.find(a => a.id === id);
     if (area) {
+      console.log("ModelDesigner: Area drag ended, updating position for id:", id);
       updateAreaPosition(id, {
         x: area.position.x + dragInfo.offset.x / scale,
         y: area.position.y + dragInfo.offset.y / scale
@@ -284,6 +297,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   const handleNoteDragEnd = (id, dragInfo) => {
     const note = notes?.find(n => n.id === id);
     if (note) {
+      console.log("ModelDesigner: Note drag ended, updating position for id:", id);
       updateNotePosition(id, {
         x: note.position.x + dragInfo.offset.x / scale,
         y: note.position.y + dragInfo.offset.y / scale
@@ -442,77 +456,93 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
             }}
           >
             {/* Areas go at the bottom layer */}
-            {areas && areas.map((area) => (
-              <CanvasArea
-                key={area.id}
-                area={area}
-                onDragEnd={(_, info) => handleAreaDragEnd(area.id, info)}
-                onUpdate={(updatedArea) => {
-                  // Update area properties (in context)
-                  const event = new CustomEvent('updateArea', {
-                    detail: { area: updatedArea }
-                  });
-                  window.dispatchEvent(event);
-                }}
-                onDelete={(areaId) => {
-                  // Delete area (in context)
-                  const event = new CustomEvent('deleteArea', {
-                    detail: { areaId }
-                  });
-                  window.dispatchEvent(event);
-                }}
-                scale={scale}
-              />
-            ))}
+            {Array.isArray(areas) && areas.length > 0 ? (
+              areas.map((area) => (
+                <CanvasArea
+                  key={area.id}
+                  area={area}
+                  onDragEnd={(_, info) => handleAreaDragEnd(area.id, info)}
+                  onUpdate={(updatedArea) => {
+                    // Update area properties (in context)
+                    const event = new CustomEvent('updateArea', {
+                      detail: { area: updatedArea }
+                    });
+                    window.dispatchEvent(event);
+                  }}
+                  onDelete={(areaId) => {
+                    // Delete area (in context)
+                    const event = new CustomEvent('deleteArea', {
+                      detail: { areaId }
+                    });
+                    window.dispatchEvent(event);
+                  }}
+                  scale={scale}
+                />
+              ))
+            ) : (
+              <div className="hidden">No areas to display</div>
+            )}
             
             {/* Relationships */}
-            {relationships && relationships.map((rel) => (
-              <Relationship key={rel.id} relationship={rel} tables={tables} />
-            ))}
+            {Array.isArray(relationships) && relationships.length > 0 ? (
+              relationships.map((rel) => (
+                <Relationship key={rel.id} relationship={rel} tables={tables || []} />
+              ))
+            ) : (
+              <div className="hidden">No relationships to display</div>
+            )}
             
             {/* Tables */}
-            {tables && tables.map((table) => (
-              <TableCard 
-                key={table.id}
-                table={table}
-                isSelected={table.id === selectedTableId}
-                onDragEnd={(_, info) => {
-                  handleTableDragEnd(
-                    table.id, 
-                    {
-                      x: table.position.x + info.offset.x / scale,
-                      y: table.position.y + info.offset.y / scale
-                    }
-                  );
-                }}
-                onClick={() => handleTableClick(table.id)}
-                scale={scale}
-              />
-            ))}
+            {Array.isArray(tables) && tables.length > 0 ? (
+              tables.map((table) => (
+                <TableCard 
+                  key={table.id}
+                  table={table}
+                  isSelected={table.id === selectedTableId}
+                  onDragEnd={(_, info) => {
+                    handleTableDragEnd(
+                      table.id, 
+                      {
+                        x: table.position.x + info.offset.x / scale,
+                        y: table.position.y + info.offset.y / scale
+                      }
+                    );
+                  }}
+                  onClick={() => handleTableClick(table.id)}
+                  scale={scale}
+                />
+              ))
+            ) : (
+              <div className="hidden">No tables to display</div>
+            )}
             
             {/* Notes go on the top layer */}
-            {notes && notes.map((note) => (
-              <CanvasNote
-                key={note.id}
-                note={note}
-                onDragEnd={(_, info) => handleNoteDragEnd(note.id, info)}
-                onUpdate={(updatedNote) => {
-                  // Update note properties (in context)
-                  const event = new CustomEvent('updateNote', {
-                    detail: { note: updatedNote }
-                  });
-                  window.dispatchEvent(event);
-                }}
-                onDelete={(noteId) => {
-                  // Delete note (in context)
-                  const event = new CustomEvent('deleteNote', {
-                    detail: { noteId }
-                  });
-                  window.dispatchEvent(event);
-                }}
-                scale={scale}
-              />
-            ))}
+            {Array.isArray(notes) && notes.length > 0 ? (
+              notes.map((note) => (
+                <CanvasNote
+                  key={note.id}
+                  note={note}
+                  onDragEnd={(_, info) => handleNoteDragEnd(note.id, info)}
+                  onUpdate={(updatedNote) => {
+                    // Update note properties (in context)
+                    const event = new CustomEvent('updateNote', {
+                      detail: { note: updatedNote }
+                    });
+                    window.dispatchEvent(event);
+                  }}
+                  onDelete={(noteId) => {
+                    // Delete note (in context)
+                    const event = new CustomEvent('deleteNote', {
+                      detail: { noteId }
+                    });
+                    window.dispatchEvent(event);
+                  }}
+                  scale={scale}
+                />
+              ))
+            ) : (
+              <div className="hidden">No notes to display</div>
+            )}
           </div>
         </div>
       </div>
