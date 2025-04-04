@@ -8,36 +8,24 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { ModelProvider } from "./contexts/ModelContext";
 
-// Tạo một QueryClient mới với cấu hình để gỡ lỗi tốt hơn
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
-const App = () => {
-  console.log("App: Rendering application");
-  
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ModelProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </ModelProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <ModelProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </ModelProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

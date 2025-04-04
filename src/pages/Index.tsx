@@ -11,34 +11,7 @@ const Index = () => {
   const [isPaletteVisible, setIsPaletteVisible] = useState(true);
   const [isGridVisible, setIsGridVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { 
-    addTable, 
-    addArea, 
-    addNote,
-    tables,
-    areas,
-    notes 
-  } = useModelContext();
-  
-  // Debug context values
-  useEffect(() => {
-    console.log("Index component context values:", { 
-      hasTables: Boolean(tables?.length), 
-      hasAreas: Boolean(areas?.length), 
-      hasNotes: Boolean(notes?.length) 
-    });
-  }, [tables, areas, notes]);
-  
-  // Get the current viewport dimensions to calculate better initial positions
-  const getRandomPosition = () => {
-    const viewportWidth = window.innerWidth * 0.6; // 60% of viewport width
-    const viewportHeight = window.innerHeight * 0.6; // 60% of viewport height
-    
-    return {
-      x: Math.random() * viewportWidth + 100,
-      y: Math.random() * viewportHeight + 100
-    };
-  };
+  const { addTable, addArea, addNote } = useModelContext();
   
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -55,59 +28,36 @@ const Index = () => {
   };
   
   const handleAddArea = () => {
-    console.log("Index: Adding new area");
-    
-    const position = getRandomPosition();
-    console.log("Index: Creating area at position:", position);
-    
-    const newArea = {
-      id: `area-${Date.now()}`,
-      title: "New Area",
-      color: "indigo",
-      position: position,
-      width: 300,
-      height: 200
-    };
-    
-    console.log("Index: About to call addArea with:", newArea);
-    addArea(newArea);
-    
-    toast({
-      title: "Area added",
-      description: "New area has been added to the canvas"
-    });
+    if (window.modelDesignerAPI && window.modelDesignerAPI.addArea) {
+      window.modelDesignerAPI.addArea();
+    } else {
+      addArea({
+        id: `area-${Date.now()}`,
+        title: "New Area",
+        color: "indigo",
+        position: { x: 100, y: 100 },
+        width: 300,
+        height: 200
+      });
+    }
   };
   
   const handleAddNote = () => {
-    console.log("Index: Adding new note");
-    
-    const position = getRandomPosition();
-    console.log("Index: Creating note at position:", position);
-    
-    const newNote = {
-      id: `note-${Date.now()}`,
-      content: "Add your note here...",
-      color: "yellow",
-      position: position,
-      width: 200
-    };
-    
-    console.log("Index: About to call addNote with:", newNote);
-    addNote(newNote);
-    
-    toast({
-      title: "Note added",
-      description: "New note has been added to the canvas"
-    });
+    if (window.modelDesignerAPI && window.modelDesignerAPI.addNote) {
+      window.modelDesignerAPI.addNote();
+    } else {
+      addNote({
+        id: `note-${Date.now()}`,
+        content: "Add your note here...",
+        color: "yellow",
+        position: { x: 100, y: 100 },
+        width: 200
+      });
+    }
   };
 
   const handleAddTable = () => {
-    console.log("Index: Adding new table");
-    
-    const position = getRandomPosition();
-    console.log("Index: Creating table at position:", position);
-    
-    const newTable = {
+    addTable({
       id: `table-${Date.now()}`,
       name: "New Table",
       fields: [
@@ -120,12 +70,9 @@ const Index = () => {
           unique: true
         }
       ],
-      position: position,
+      position: { x: 300, y: 200 },
       width: 300,
-    };
-    
-    console.log("Index: About to call addTable with:", newTable);
-    addTable(newTable);
+    });
     
     toast({
       title: "Table added",
@@ -183,15 +130,6 @@ const Index = () => {
       window.removeEventListener('deleteNote', handleDeleteNote);
     };
   }, []);
-
-  console.log("Index: Rendering with:", {
-    isPaletteVisible,
-    isGridVisible,
-    isFullscreen,
-    tablesCount: tables?.length || 0,
-    areasCount: areas?.length || 0,
-    notesCount: notes?.length || 0
-  });
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50">

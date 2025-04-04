@@ -7,9 +7,6 @@ export interface Field {
   type: string;
   required: boolean;
   unique: boolean;
-  isPrimary?: boolean;
-  description?: string;
-  defaultValue?: string;
   options?: Record<string, any>;
   reference?: {
     tableId: string;
@@ -24,25 +21,6 @@ export interface Table {
   name: string;
   fields: Field[];
   position: { x: number; y: number };
-  width?: number;
-  height?: number;
-}
-
-export interface Area {
-  id: string;
-  title: string;
-  color: string;
-  position: { x: number; y: number };
-  width: number;
-  height: number;
-}
-
-export interface Note {
-  id: string;
-  content: string;
-  color: string;
-  position: { x: number; y: number };
-  width: number;
 }
 
 export interface Relationship {
@@ -59,9 +37,7 @@ export interface Relationship {
 interface ModelState {
   tables: Table[];
   relationships: Relationship[];
-  areas: Area[];
-  notes: Note[];
-  history: { tables: Table[]; relationships: Relationship[]; areas: Area[]; notes: Note[] }[];
+  history: { tables: Table[]; relationships: Relationship[] }[];
   historyIndex: number;
   canUndo: boolean;
   canRedo: boolean;
@@ -79,17 +55,9 @@ type ModelAction =
   | { type: 'ADD_RELATIONSHIP'; payload: Relationship }
   | { type: 'UPDATE_RELATIONSHIP'; payload: { relationshipId: string; updatedRelationship: Relationship } }
   | { type: 'REMOVE_RELATIONSHIP'; payload: string }
-  | { type: 'ADD_AREA'; payload: Area }
-  | { type: 'UPDATE_AREA'; payload: Area }
-  | { type: 'UPDATE_AREA_POSITION'; payload: { areaId: string; position: { x: number; y: number } } }
-  | { type: 'REMOVE_AREA'; payload: string }
-  | { type: 'ADD_NOTE'; payload: Note }
-  | { type: 'UPDATE_NOTE'; payload: Note }
-  | { type: 'UPDATE_NOTE_POSITION'; payload: { noteId: string; position: { x: number; y: number } } }
-  | { type: 'REMOVE_NOTE'; payload: string }
   | { type: 'UNDO' }
   | { type: 'REDO' }
-  | { type: 'IMPORT_MODEL'; payload: { tables: Table[]; relationships: Relationship[]; areas: Area[]; notes: Note[] } };
+  | { type: 'IMPORT_MODEL'; payload: { tables: Table[]; relationships: Relationship[] } };
 
 interface ModelContextType extends ModelState {
   addTable: (table: Table) => void;
@@ -105,37 +73,24 @@ interface ModelContextType extends ModelState {
   removeRelationship: (relationshipId: string) => void;
   undo: () => void;
   redo: () => void;
-  importModel: (model: { tables: Table[]; relationships: Relationship[]; areas?: Area[]; notes?: Note[] }) => void;
-  exportModel: () => { tables: Table[]; relationships: Relationship[]; areas: Area[]; notes: Note[] };
-  // Add new functions for areas and notes
-  addArea: (area: Area) => void;
-  updateArea: (area: Area) => void;
-  updateAreaPosition: (areaId: string, position: { x: number; y: number }) => void;
-  removeArea: (areaId: string) => void;
-  addNote: (note: Note) => void;
-  updateNote: (note: Note) => void;
-  updateNotePosition: (noteId: string, position: { x: number; y: number }) => void;
-  removeNote: (noteId: string) => void;
+  importModel: (model: { tables: Table[]; relationships: Relationship[] }) => void;
+  exportModel: () => { tables: Table[]; relationships: Relationship[] };
 }
 
 const initialState: ModelState = {
   tables: [],
   relationships: [],
-  areas: [],
-  notes: [],
-  history: [{ tables: [], relationships: [], areas: [], notes: [] }],
+  history: [{ tables: [], relationships: [] }],
   historyIndex: 0,
   canUndo: false,
   canRedo: false,
 };
 
-const saveHistory = (state: ModelState, tables: Table[], relationships: Relationship[], areas: Area[], notes: Note[]): ModelState => {
+const saveHistory = (state: ModelState, tables: Table[], relationships: Relationship[]): ModelState => {
   const historyCopy = [...state.history.slice(0, state.historyIndex + 1)];
   historyCopy.push({
     tables: JSON.parse(JSON.stringify(tables)),
     relationships: JSON.parse(JSON.stringify(relationships)),
-    areas: JSON.parse(JSON.stringify(areas)),
-    notes: JSON.parse(JSON.stringify(notes)),
   });
   
   // Limit history to 50 entries
@@ -147,8 +102,6 @@ const saveHistory = (state: ModelState, tables: Table[], relationships: Relation
     ...state,
     tables,
     relationships,
-    areas,
-    notes,
     history: historyCopy,
     historyIndex: historyCopy.length - 1,
     canUndo: historyCopy.length > 1,
@@ -162,9 +115,7 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
       return saveHistory(
         state,
         [...state.tables, action.payload],
-        state.relationships,
-        state.areas,
-        state.notes
+        state.relationships
       );
       
     case 'REMOVE_TABLE': {
@@ -172,7 +123,7 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
         (rel) => rel.sourceTableId !== action.payload && rel.targetTableId !== action.payload
       );
       const filteredTables = state.tables.filter((t) => t.id !== action.payload);
-      return saveHistory(state, filteredTables, filteredRelationships, state.areas, state.notes);
+      return saveHistory(state, filteredTables, filteredRelationships);
     }
     
     case 'UPDATE_TABLE_NAME': {
@@ -181,7 +132,7 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
           ? { ...table, name: action.payload.name }
           : table
       );
-      return saveHistory(state, updatedTables, state.relationships, state.areas, state.notes);
+      return saveHistory(state, updatedTables, state.relationships);
     }
     
     case 'UPDATE_TABLE_POSITION': {
@@ -203,7 +154,7 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
           ? { ...table, fields: [...table.fields, action.payload.field] }
           : table
       );
-      return saveHistory(state, updatedTables, state.relationships, state.areas, state.notes);
+      return saveHistory(state, updatedTables, state.relationships);
     }
     
     case 'UPDATE_FIELD': {
@@ -216,7 +167,7 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
           )
         };
       });
-      return saveHistory(state, updatedTables, state.relationships, state.areas, state.notes);
+      return saveHistory(state, updatedTables, state.relationships);
     }
     
     case 'REMOVE_FIELD': {
@@ -264,7 +215,7 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
         );
       }
       
-      return saveHistory(state, updatedTables, updatedRelationships, state.areas, state.notes);
+      return saveHistory(state, updatedTables, updatedRelationships);
     }
     
     case 'CREATE_REFERENCE_FIELD': {
@@ -355,98 +306,26 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
       // Add the relationship
       updatedRelationships = [...updatedRelationships, relationship];
       
-      return saveHistory(state, updatedTables, updatedRelationships, state.areas, state.notes);
+      return saveHistory(state, updatedTables, updatedRelationships);
     }
     
     case 'ADD_RELATIONSHIP':
       return saveHistory(
         state,
         state.tables,
-        [...state.relationships, action.payload],
-        state.areas,
-        state.notes
+        [...state.relationships, action.payload]
       );
       
     case 'UPDATE_RELATIONSHIP': {
       const updatedRelationships = state.relationships.map((rel) =>
         rel.id === action.payload.relationshipId ? action.payload.updatedRelationship : rel
       );
-      return saveHistory(state, state.tables, updatedRelationships, state.areas, state.notes);
+      return saveHistory(state, state.tables, updatedRelationships);
     }
     
     case 'REMOVE_RELATIONSHIP': {
       const filteredRelationships = state.relationships.filter((r) => r.id !== action.payload);
-      return saveHistory(state, state.tables, filteredRelationships, state.areas, state.notes);
-    }
-
-    // Area actions
-    case 'ADD_AREA':
-      return saveHistory(
-        state,
-        state.tables,
-        state.relationships,
-        [...state.areas, action.payload],
-        state.notes
-      );
-
-    case 'UPDATE_AREA': {
-      const updatedAreas = state.areas.map((area) =>
-        area.id === action.payload.id ? action.payload : area
-      );
-      return saveHistory(state, state.tables, state.relationships, updatedAreas, state.notes);
-    }
-
-    case 'UPDATE_AREA_POSITION': {
-      const updatedAreas = state.areas.map((area) =>
-        area.id === action.payload.areaId
-          ? { ...area, position: action.payload.position }
-          : area
-      );
-      // Don't save history for position changes
-      return {
-        ...state,
-        areas: updatedAreas,
-      };
-    }
-
-    case 'REMOVE_AREA': {
-      const filteredAreas = state.areas.filter((a) => a.id !== action.payload);
-      return saveHistory(state, state.tables, state.relationships, filteredAreas, state.notes);
-    }
-
-    // Note actions
-    case 'ADD_NOTE':
-      return saveHistory(
-        state,
-        state.tables,
-        state.relationships,
-        state.areas,
-        [...state.notes, action.payload]
-      );
-
-    case 'UPDATE_NOTE': {
-      const updatedNotes = state.notes.map((note) =>
-        note.id === action.payload.id ? action.payload : note
-      );
-      return saveHistory(state, state.tables, state.relationships, state.areas, updatedNotes);
-    }
-
-    case 'UPDATE_NOTE_POSITION': {
-      const updatedNotes = state.notes.map((note) =>
-        note.id === action.payload.noteId
-          ? { ...note, position: action.payload.position }
-          : note
-      );
-      // Don't save history for position changes
-      return {
-        ...state,
-        notes: updatedNotes,
-      };
-    }
-
-    case 'REMOVE_NOTE': {
-      const filteredNotes = state.notes.filter((n) => n.id !== action.payload);
-      return saveHistory(state, state.tables, state.relationships, state.areas, filteredNotes);
+      return saveHistory(state, state.tables, filteredRelationships);
     }
     
     case 'UNDO': {
@@ -457,8 +336,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
           ...state,
           tables: JSON.parse(JSON.stringify(historicState.tables)),
           relationships: JSON.parse(JSON.stringify(historicState.relationships)),
-          areas: JSON.parse(JSON.stringify(historicState.areas)),
-          notes: JSON.parse(JSON.stringify(historicState.notes)),
           historyIndex: newIndex,
           canUndo: newIndex > 0,
           canRedo: true,
@@ -475,8 +352,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
           ...state,
           tables: JSON.parse(JSON.stringify(historicState.tables)),
           relationships: JSON.parse(JSON.stringify(historicState.relationships)),
-          areas: JSON.parse(JSON.stringify(historicState.areas)),
-          notes: JSON.parse(JSON.stringify(historicState.notes)),
           historyIndex: newIndex,
           canUndo: true,
           canRedo: newIndex < state.history.length - 1,
@@ -489,9 +364,7 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
       return saveHistory(
         state,
         action.payload.tables || [],
-        action.payload.relationships || [],
-        action.payload.areas || [],
-        action.payload.notes || []
+        action.payload.relationships || []
       );
       
     default:
@@ -548,40 +421,6 @@ export const ModelProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     dispatch({ type: 'REMOVE_RELATIONSHIP', payload: relationshipId });
   };
 
-  // Area functions
-  const addArea = (area: Area) => {
-    dispatch({ type: 'ADD_AREA', payload: area });
-  };
-
-  const updateArea = (area: Area) => {
-    dispatch({ type: 'UPDATE_AREA', payload: area });
-  };
-
-  const updateAreaPosition = (areaId: string, position: { x: number; y: number }) => {
-    dispatch({ type: 'UPDATE_AREA_POSITION', payload: { areaId, position } });
-  };
-
-  const removeArea = (areaId: string) => {
-    dispatch({ type: 'REMOVE_AREA', payload: areaId });
-  };
-
-  // Note functions
-  const addNote = (note: Note) => {
-    dispatch({ type: 'ADD_NOTE', payload: note });
-  };
-
-  const updateNote = (note: Note) => {
-    dispatch({ type: 'UPDATE_NOTE', payload: note });
-  };
-
-  const updateNotePosition = (noteId: string, position: { x: number; y: number }) => {
-    dispatch({ type: 'UPDATE_NOTE_POSITION', payload: { noteId, position } });
-  };
-
-  const removeNote = (noteId: string) => {
-    dispatch({ type: 'REMOVE_NOTE', payload: noteId });
-  };
-
   const undo = () => {
     dispatch({ type: 'UNDO' });
   };
@@ -590,22 +429,15 @@ export const ModelProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     dispatch({ type: 'REDO' });
   };
 
-  const importModel = (model: { tables: Table[]; relationships: Relationship[]; areas?: Area[]; notes?: Note[] }) => {
-    dispatch({ type: 'IMPORT_MODEL', payload: { 
-      tables: model.tables || [],
-      relationships: model.relationships || [],
-      areas: model.areas || [],
-      notes: model.notes || []
-    }});
+  const importModel = (model: { tables: Table[]; relationships: Relationship[] }) => {
+    dispatch({ type: 'IMPORT_MODEL', payload: model });
   };
 
   const exportModel = () => {
-    const { tables, relationships, areas, notes } = state;
+    const { tables, relationships } = state;
     return { 
       tables: JSON.parse(JSON.stringify(tables)), 
-      relationships: JSON.parse(JSON.stringify(relationships)),
-      areas: JSON.parse(JSON.stringify(areas)),
-      notes: JSON.parse(JSON.stringify(notes))
+      relationships: JSON.parse(JSON.stringify(relationships))
     };
   };
 
@@ -622,14 +454,6 @@ export const ModelProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     addRelationship,
     updateRelationship,
     removeRelationship,
-    addArea,
-    updateArea,
-    updateAreaPosition,
-    removeArea,
-    addNote,
-    updateNote,
-    updateNotePosition,
-    removeNote,
     undo,
     redo,
     importModel,

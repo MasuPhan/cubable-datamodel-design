@@ -6,10 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 
-export const FieldTypePalette = ({ setIsDraggingField, onFieldTypeSelect, selectedTableId }) => {
-  const { toast } = useToast();
+export const FieldTypePalette = ({ setIsDraggingField }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
@@ -34,15 +32,6 @@ export const FieldTypePalette = ({ setIsDraggingField, onFieldTypeSelect, select
 
   const handleDragEnd = () => {
     setIsDraggingField(false);
-  };
-
-  const handleFieldTypeClick = (fieldType) => {
-    onFieldTypeSelect(fieldType);
-    const action = selectedTableId ? "added to existing table" : "created with new table";
-    toast({
-      title: `Field type ${fieldType} selected`,
-      description: `${fieldType} field ${action}`
-    });
   };
 
   return (
@@ -77,9 +66,8 @@ export const FieldTypePalette = ({ setIsDraggingField, onFieldTypeSelect, select
                 draggable
                 onDragStart={(e) => handleDragStart(e, field.value)}
                 onDragEnd={handleDragEnd}
-                onClick={() => handleFieldTypeClick(field.value)}
                 className="flex flex-col items-center bg-slate-50 hover:bg-slate-100 
-                           rounded-md p-3 cursor-pointer border border-slate-200 
+                           rounded-md p-3 cursor-grab border border-slate-200 
                            transition-colors duration-200"
               >
                 <div className="text-indigo-600 mb-2">

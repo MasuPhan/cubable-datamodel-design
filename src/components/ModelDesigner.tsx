@@ -14,30 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen }) => {
   const { toast } = useToast();
-  const { 
-    tables, 
-    relationships, 
-    updateTablePosition, 
-    addFieldToTable, 
-    addArea, 
-    addNote, 
-    areas, 
-    notes, 
-    updateAreaPosition, 
-    updateNotePosition, 
-    addTable 
-  } = useModelContext();
-  
-  console.log("ModelDesigner rendering with:", {
-    tables: tables?.length || 0,
-    areas: areas?.length || 0,
-    notes: notes?.length || 0,
-    relationships: relationships?.length || 0,
-    rawTables: tables,
-    rawAreas: areas,
-    rawNotes: notes
-  });
-  
+  const { tables, relationships, updateTablePosition, addFieldToTable, addArea, addNote, areas, notes, updateAreaPosition, updateNotePosition } = useModelContext();
   const [isDraggingField, setIsDraggingField] = useState(false);
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -45,7 +22,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   const [isPanning, setIsPanning] = useState(false);
   const [startPanPos, setStartPanPos] = useState({ x: 0, y: 0 });
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
-  const [selectedTableId, setSelectedTableId] = useState(null);
   
   useEffect(() => {
     setIsPaletteCollapsed(!isPaletteVisible);
@@ -83,14 +59,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   }, []);
 
   const handleTableDragEnd = (id, newPosition) => {
-    console.log("ModelDesigner: Table drag ended, updating position for id:", id, "to:", newPosition);
     updateTablePosition(id, newPosition);
-    setSelectedTableId(id);
-  };
-
-  const handleTableClick = (id) => {
-    console.log("ModelDesigner: Table clicked, id:", id);
-    setSelectedTableId(id);
   };
 
   const handleWheel = (e) => {
@@ -144,7 +113,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     const y = (e.clientY - rect.top) / scale - position.y / scale;
     
     // Find the table (if any) under the drop position
-    const droppedOnTable = tables?.find(table => {
+    const droppedOnTable = tables.find(table => {
       const tableLeft = table.position.x;
       const tableRight = table.position.x + (table.width || 300);
       const tableTop = table.position.y;
@@ -155,7 +124,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     
     if (droppedOnTable) {
       // Add field to the table
-      console.log("ModelDesigner: Field dropped on table, id:", droppedOnTable.id, "field type:", fieldType);
       addFieldToTable(droppedOnTable.id, {
         id: `field-${Date.now()}`,
         name: `New ${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field`,
@@ -166,7 +134,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
         description: "",
         defaultValue: "",
       });
-      setSelectedTableId(droppedOnTable.id);
     }
   };
   
@@ -184,7 +151,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   };
 
   const handleAddArea = () => {
-    console.log("ModelDesigner: Adding area directly");
     const newArea = {
       id: `area-${Date.now()}`,
       title: "New Area",
@@ -196,7 +162,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       width: 300,
       height: 200
     };
-    console.log("ModelDesigner: About to call addArea with:", newArea);
     addArea(newArea);
     toast({
       title: "Area added",
@@ -205,7 +170,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   };
 
   const handleAddNote = () => {
-    console.log("ModelDesigner: Adding note directly");
     const newNote = {
       id: `note-${Date.now()}`,
       content: "Add your note here...",
@@ -216,7 +180,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       },
       width: 200
     };
-    console.log("ModelDesigner: About to call addNote with:", newNote);
     addNote(newNote);
     toast({
       title: "Note added",
@@ -224,69 +187,9 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     });
   };
 
-  const handleAddFieldType = (fieldType) => {
-    if (selectedTableId) {
-      // If a table is selected, add field to that table
-      console.log("ModelDesigner: Adding field to selected table, id:", selectedTableId, "field type:", fieldType);
-      addFieldToTable(selectedTableId, {
-        id: `field-${Date.now()}`,
-        name: `New ${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field`,
-        type: fieldType,
-        required: false,
-        unique: false,
-        isPrimary: false,
-        description: "",
-        defaultValue: "",
-      });
-      toast({
-        title: "Field added",
-        description: `New ${fieldType} field has been added to the table`
-      });
-    } else {
-      // If no table is selected, create a new table with this field
-      const newTableId = `table-${Date.now()}`;
-      console.log("ModelDesigner: Creating new table with field, id:", newTableId, "field type:", fieldType);
-      addTable({
-        id: newTableId,
-        name: "New Table",
-        fields: [
-          {
-            id: `field-${Date.now()}-1`,
-            name: "ID",
-            type: "id",
-            required: true,
-            isPrimary: true,
-            unique: true
-          },
-          {
-            id: `field-${Date.now()}-2`,
-            name: `New ${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field`,
-            type: fieldType,
-            required: false,
-            unique: false,
-            isPrimary: false,
-            description: "",
-            defaultValue: "",
-          }
-        ],
-        position: { 
-          x: -position.x / scale + 100, 
-          y: -position.y / scale + 100 
-        },
-        width: 300,
-      });
-      setSelectedTableId(newTableId);
-      toast({
-        title: "Table added",
-        description: `New table with ${fieldType} field has been created`
-      });
-    }
-  };
-
   const handleAreaDragEnd = (id, dragInfo) => {
-    const area = areas?.find(a => a.id === id);
+    const area = areas.find(a => a.id === id);
     if (area) {
-      console.log("ModelDesigner: Area drag ended, updating position for id:", id);
       updateAreaPosition(id, {
         x: area.position.x + dragInfo.offset.x / scale,
         y: area.position.y + dragInfo.offset.y / scale
@@ -295,9 +198,8 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   };
 
   const handleNoteDragEnd = (id, dragInfo) => {
-    const note = notes?.find(n => n.id === id);
+    const note = notes.find(n => n.id === id);
     if (note) {
-      console.log("ModelDesigner: Note drag ended, updating position for id:", id);
       updateNotePosition(id, {
         x: note.position.x + dragInfo.offset.x / scale,
         y: note.position.y + dragInfo.offset.y / scale
@@ -316,27 +218,12 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
         resetView
       };
     }
-    
-    console.log("ModelDesigner mounted", {
-      tables: tables?.length || 0,
-      areas: areas?.length || 0, 
-      notes: notes?.length || 0
-    });
-    
     return () => {
       if (typeof window !== 'undefined') {
         delete window.modelDesignerAPI;
       }
     };
-  }, [position, scale, tables, areas, notes]);
-
-  // Optimized grid rendering
-  const gridSize = 20;
-  const gridStyle = {
-    backgroundSize: `${gridSize * scale}px ${gridSize * scale}px`,
-    backgroundImage: isGridVisible ? 'linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px)' : 'none',
-    backgroundPosition: `${position.x}px ${position.y}px`
-  };
+  }, [position, scale]);
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-slate-50">
@@ -419,11 +306,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
           >
             {isPaletteCollapsed ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
           </button>
-          <FieldTypePalette 
-            setIsDraggingField={setIsDraggingField} 
-            onFieldTypeSelect={handleAddFieldType}
-            selectedTableId={selectedTableId}
-          />
+          <FieldTypePalette setIsDraggingField={setIsDraggingField} />
         </div>
       </div>
       
@@ -438,7 +321,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
         ref={containerRef}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        style={gridStyle}
       >
         <div
           className={cn(
@@ -447,102 +329,95 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
           )}
         >
           <div 
-            className="absolute w-[5000px] h-[5000px]"
+            className="absolute w-full h-full"
             style={{
               transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-              transformOrigin: "0 0",
-              left: "-2500px",
-              top: "-2500px"
+              transformOrigin: "0 0"
             }}
           >
-            {/* Areas go at the bottom layer */}
-            {Array.isArray(areas) && areas.length > 0 ? (
-              areas.map((area) => (
-                <CanvasArea
-                  key={area.id}
-                  area={area}
-                  onDragEnd={(_, info) => handleAreaDragEnd(area.id, info)}
-                  onUpdate={(updatedArea) => {
-                    // Update area properties (in context)
-                    const event = new CustomEvent('updateArea', {
-                      detail: { area: updatedArea }
-                    });
-                    window.dispatchEvent(event);
-                  }}
-                  onDelete={(areaId) => {
-                    // Delete area (in context)
-                    const event = new CustomEvent('deleteArea', {
-                      detail: { areaId }
-                    });
-                    window.dispatchEvent(event);
-                  }}
-                  scale={scale}
-                />
-              ))
-            ) : (
-              <div className="hidden">No areas to display</div>
+            {isGridVisible && (
+              <div className="absolute inset-0 grid grid-cols-[repeat(50,20px)] grid-rows-[repeat(50,20px)] opacity-20">
+                {Array.from({ length: 50 }).map((_, row) => (
+                  Array.from({ length: 50 }).map((_, col) => (
+                    <div 
+                      key={`${row}-${col}`}
+                      className="border-[0.5px] border-slate-300"
+                    />
+                  ))
+                ))}
+              </div>
             )}
+            
+            {/* Areas go at the bottom layer */}
+            {areas && areas.map((area) => (
+              <CanvasArea
+                key={area.id}
+                area={area}
+                onDragEnd={(_, info) => handleAreaDragEnd(area.id, info)}
+                onUpdate={(updatedArea) => {
+                  // Update area properties (in context)
+                  const event = new CustomEvent('updateArea', {
+                    detail: { area: updatedArea }
+                  });
+                  window.dispatchEvent(event);
+                }}
+                onDelete={(areaId) => {
+                  // Delete area (in context)
+                  const event = new CustomEvent('deleteArea', {
+                    detail: { areaId }
+                  });
+                  window.dispatchEvent(event);
+                }}
+                scale={scale}
+              />
+            ))}
             
             {/* Relationships */}
-            {Array.isArray(relationships) && relationships.length > 0 ? (
-              relationships.map((rel) => (
-                <Relationship key={rel.id} relationship={rel} tables={tables || []} />
-              ))
-            ) : (
-              <div className="hidden">No relationships to display</div>
-            )}
+            {relationships.map((rel) => (
+              <Relationship key={rel.id} relationship={rel} tables={tables} />
+            ))}
             
             {/* Tables */}
-            {Array.isArray(tables) && tables.length > 0 ? (
-              tables.map((table) => (
-                <TableCard 
-                  key={table.id}
-                  table={table}
-                  isSelected={table.id === selectedTableId}
-                  onDragEnd={(_, info) => {
-                    handleTableDragEnd(
-                      table.id, 
-                      {
-                        x: table.position.x + info.offset.x / scale,
-                        y: table.position.y + info.offset.y / scale
-                      }
-                    );
-                  }}
-                  onClick={() => handleTableClick(table.id)}
-                  scale={scale}
-                />
-              ))
-            ) : (
-              <div className="hidden">No tables to display</div>
-            )}
+            {tables.map((table) => (
+              <TableCard 
+                key={table.id}
+                table={table}
+                onDragEnd={(_, info) => {
+                  handleTableDragEnd(
+                    table.id, 
+                    {
+                      x: table.position.x + info.offset.x / scale,
+                      y: table.position.y + info.offset.y / scale
+                    }
+                  );
+                }}
+                scale={scale}
+              />
+            ))}
             
             {/* Notes go on the top layer */}
-            {Array.isArray(notes) && notes.length > 0 ? (
-              notes.map((note) => (
-                <CanvasNote
-                  key={note.id}
-                  note={note}
-                  onDragEnd={(_, info) => handleNoteDragEnd(note.id, info)}
-                  onUpdate={(updatedNote) => {
-                    // Update note properties (in context)
-                    const event = new CustomEvent('updateNote', {
-                      detail: { note: updatedNote }
-                    });
-                    window.dispatchEvent(event);
-                  }}
-                  onDelete={(noteId) => {
-                    // Delete note (in context)
-                    const event = new CustomEvent('deleteNote', {
-                      detail: { noteId }
-                    });
-                    window.dispatchEvent(event);
-                  }}
-                  scale={scale}
-                />
-              ))
-            ) : (
-              <div className="hidden">No notes to display</div>
-            )}
+            {notes && notes.map((note) => (
+              <CanvasNote
+                key={note.id}
+                note={note}
+                onDragEnd={(_, info) => handleNoteDragEnd(note.id, info)}
+                onUpdate={(updatedNote) => {
+                  // Update note properties (in context)
+                  const event = new CustomEvent('updateNote', {
+                    detail: { note: updatedNote }
+                  });
+                  window.dispatchEvent(event);
+                }}
+                onDelete={(noteId) => {
+                  // Delete note (in context)
+                  const event = new CustomEvent('deleteNote', {
+                    detail: { noteId }
+                  });
+                  window.dispatchEvent(event);
+                }}
+                scale={scale}
+              />
+            ))}
           </div>
         </div>
       </div>
