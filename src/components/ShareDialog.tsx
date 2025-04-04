@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox, CheckedState } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, Link2, Mail, Users, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -63,6 +63,11 @@ export const ShareDialog = ({ open, onOpenChange }) => {
       title: "Public sharing updated",
       description: isPublicAccess ? "Your model is now publicly accessible" : "Public access has been disabled",
     });
+  };
+
+  // Added handler for checkbox to properly handle the CheckedState type
+  const handleCheckedChange = (checked: CheckedState) => {
+    setIsPublicAccess(checked === true);
   };
 
   return (
@@ -179,7 +184,7 @@ export const ShareDialog = ({ open, onOpenChange }) => {
               <Checkbox
                 id="public-access"
                 checked={isPublicAccess}
-                onCheckedChange={setIsPublicAccess}
+                onCheckedChange={handleCheckedChange}
               />
               <div className="grid gap-1.5">
                 <Label

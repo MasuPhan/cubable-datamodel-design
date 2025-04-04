@@ -2,6 +2,7 @@
 interface ModelDesignerAPI {
   addArea: () => void;
   addNote: () => void;
+  addTable?: () => void;
   zoomIn: () => void;
   zoomOut: () => void;
   resetView: () => void;
