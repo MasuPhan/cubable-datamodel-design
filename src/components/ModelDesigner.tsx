@@ -14,7 +14,19 @@ import { useToast } from "@/hooks/use-toast";
 
 export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen }) => {
   const { toast } = useToast();
-  const { tables, relationships, updateTablePosition, addFieldToTable, addArea, addNote, areas, notes, updateAreaPosition, updateNotePosition, addTable } = useModelContext();
+  const { 
+    tables, 
+    relationships, 
+    updateTablePosition, 
+    addFieldToTable, 
+    addArea, 
+    addNote, 
+    areas, 
+    notes, 
+    updateAreaPosition, 
+    updateNotePosition, 
+    addTable 
+  } = useModelContext();
   const [isDraggingField, setIsDraggingField] = useState(false);
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
