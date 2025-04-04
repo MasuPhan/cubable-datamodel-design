@@ -13,6 +13,17 @@ const Index = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { addTable, addArea, addNote } = useModelContext();
   
+  // Get the current viewport dimensions to calculate better initial positions
+  const getRandomPosition = () => {
+    const viewportWidth = window.innerWidth * 0.6; // 60% of viewport width
+    const viewportHeight = window.innerHeight * 0.6; // 60% of viewport height
+    
+    return {
+      x: Math.random() * viewportWidth + 100,
+      y: Math.random() * viewportHeight + 100
+    };
+  };
+  
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(err => {
@@ -32,14 +43,18 @@ const Index = () => {
     if (window.modelDesignerAPI && window.modelDesignerAPI.addArea) {
       window.modelDesignerAPI.addArea();
     } else {
+      const position = getRandomPosition();
+      console.log("Creating area at position:", position);
+      
       addArea({
         id: `area-${Date.now()}`,
         title: "New Area",
         color: "indigo",
-        position: { x: 100, y: 100 },
+        position: position,
         width: 300,
         height: 200
       });
+      
       toast({
         title: "Area added",
         description: "New area has been added to the canvas"
@@ -52,13 +67,17 @@ const Index = () => {
     if (window.modelDesignerAPI && window.modelDesignerAPI.addNote) {
       window.modelDesignerAPI.addNote();
     } else {
+      const position = getRandomPosition();
+      console.log("Creating note at position:", position);
+      
       addNote({
         id: `note-${Date.now()}`,
         content: "Add your note here...",
         color: "yellow",
-        position: { x: 100, y: 100 },
+        position: position,
         width: 200
       });
+      
       toast({
         title: "Note added",
         description: "New note has been added to the canvas"
@@ -68,6 +87,9 @@ const Index = () => {
 
   const handleAddTable = () => {
     console.log("Adding new table");
+    const position = getRandomPosition();
+    console.log("Creating table at position:", position);
+    
     addTable({
       id: `table-${Date.now()}`,
       name: "New Table",
@@ -81,7 +103,7 @@ const Index = () => {
           unique: true
         }
       ],
-      position: { x: 300, y: 200 },
+      position: position,
       width: 300,
     });
     

@@ -27,6 +27,14 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     updateNotePosition, 
     addTable 
   } = useModelContext();
+  
+  console.log("ModelDesigner rendering with:", {
+    tables: tables.length,
+    areas: areas?.length || 0,
+    notes: notes?.length || 0,
+    relationships: relationships.length
+  });
+  
   const [isDraggingField, setIsDraggingField] = useState(false);
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -294,6 +302,13 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
         resetView
       };
     }
+    
+    console.log("ModelDesigner mounted", {
+      tables: tables.length,
+      areas: areas?.length || 0, 
+      notes: notes?.length || 0
+    });
+    
     return () => {
       if (typeof window !== 'undefined') {
         delete window.modelDesignerAPI;
