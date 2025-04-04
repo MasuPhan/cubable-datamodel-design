@@ -29,10 +29,10 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   } = useModelContext();
   
   console.log("ModelDesigner rendering with:", {
-    tables: tables.length,
+    tables: tables?.length || 0,
     areas: areas?.length || 0,
     notes: notes?.length || 0,
-    relationships: relationships.length
+    relationships: relationships?.length || 0
   });
   
   const [isDraggingField, setIsDraggingField] = useState(false);
@@ -272,7 +272,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   };
 
   const handleAreaDragEnd = (id, dragInfo) => {
-    const area = areas.find(a => a.id === id);
+    const area = areas?.find(a => a.id === id);
     if (area) {
       updateAreaPosition(id, {
         x: area.position.x + dragInfo.offset.x / scale,
@@ -282,7 +282,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   };
 
   const handleNoteDragEnd = (id, dragInfo) => {
-    const note = notes.find(n => n.id === id);
+    const note = notes?.find(n => n.id === id);
     if (note) {
       updateNotePosition(id, {
         x: note.position.x + dragInfo.offset.x / scale,
@@ -304,7 +304,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     }
     
     console.log("ModelDesigner mounted", {
-      tables: tables.length,
+      tables: tables?.length || 0,
       areas: areas?.length || 0, 
       notes: notes?.length || 0
     });
@@ -314,7 +314,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
         delete window.modelDesignerAPI;
       }
     };
-  }, [position, scale]);
+  }, [position, scale, tables, areas, notes]);
 
   // Optimized grid rendering
   const gridSize = 20;
@@ -466,12 +466,12 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
             ))}
             
             {/* Relationships */}
-            {relationships.map((rel) => (
+            {relationships && relationships.map((rel) => (
               <Relationship key={rel.id} relationship={rel} tables={tables} />
             ))}
             
             {/* Tables */}
-            {tables.map((table) => (
+            {tables && tables.map((table) => (
               <TableCard 
                 key={table.id}
                 table={table}
