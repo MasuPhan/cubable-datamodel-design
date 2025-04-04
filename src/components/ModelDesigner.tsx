@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen }) => {
   const { toast } = useToast();
-  const { tables, relationships, updateTablePosition, addFieldToTable, addArea, addNote, areas, notes, updateAreaPosition, updateNotePosition } = useModelContext();
+  const { tables, relationships, updateTablePosition, addFieldToTable, addArea, addNote, areas, notes, updateAreaPosition, updateNotePosition, addTable } = useModelContext();
   const [isDraggingField, setIsDraggingField] = useState(false);
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -22,6 +22,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   const [isPanning, setIsPanning] = useState(false);
   const [startPanPos, setStartPanPos] = useState({ x: 0, y: 0 });
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
+  const [selectedTableId, setSelectedTableId] = useState(null);
   
   useEffect(() => {
     setIsPaletteCollapsed(!isPaletteVisible);
@@ -60,6 +61,11 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
 
   const handleTableDragEnd = (id, newPosition) => {
     updateTablePosition(id, newPosition);
+    setSelectedTableId(id);
+  };
+
+  const handleTableClick = (id) => {
+    setSelectedTableId(id);
   };
 
   const handleWheel = (e) => {
@@ -134,6 +140,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
         description: "",
         defaultValue: "",
       });
+      setSelectedTableId(droppedOnTable.id);
     }
   };
   
@@ -187,6 +194,63 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     });
   };
 
+  const handleAddFieldType = (fieldType) => {
+    if (selectedTableId) {
+      // If a table is selected, add field to that table
+      addFieldToTable(selectedTableId, {
+        id: `field-${Date.now()}`,
+        name: `New ${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field`,
+        type: fieldType,
+        required: false,
+        unique: false,
+        isPrimary: false,
+        description: "",
+        defaultValue: "",
+      });
+      toast({
+        title: "Field added",
+        description: `New ${fieldType} field has been added to the table`
+      });
+    } else {
+      // If no table is selected, create a new table with this field
+      const newTableId = `table-${Date.now()}`;
+      addTable({
+        id: newTableId,
+        name: "New Table",
+        fields: [
+          {
+            id: `field-${Date.now()}-1`,
+            name: "ID",
+            type: "id",
+            required: true,
+            isPrimary: true,
+            unique: true
+          },
+          {
+            id: `field-${Date.now()}-2`,
+            name: `New ${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field`,
+            type: fieldType,
+            required: false,
+            unique: false,
+            isPrimary: false,
+            description: "",
+            defaultValue: "",
+          }
+        ],
+        position: { 
+          x: -position.x / scale + 100, 
+          y: -position.y / scale + 100 
+        },
+        width: 300,
+      });
+      setSelectedTableId(newTableId);
+      toast({
+        title: "Table added",
+        description: `New table with ${fieldType} field has been created`
+      });
+    }
+  };
+
   const handleAreaDragEnd = (id, dragInfo) => {
     const area = areas.find(a => a.id === id);
     if (area) {
@@ -224,6 +288,14 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       }
     };
   }, [position, scale]);
+
+  // Optimized grid rendering
+  const gridSize = 20;
+  const gridStyle = {
+    backgroundSize: `${gridSize * scale}px ${gridSize * scale}px`,
+    backgroundImage: isGridVisible ? 'linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px)' : 'none',
+    backgroundPosition: `${position.x}px ${position.y}px`
+  };
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-slate-50">
@@ -306,7 +378,11 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
           >
             {isPaletteCollapsed ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
           </button>
-          <FieldTypePalette setIsDraggingField={setIsDraggingField} />
+          <FieldTypePalette 
+            setIsDraggingField={setIsDraggingField} 
+            onFieldTypeSelect={handleAddFieldType}
+            selectedTableId={selectedTableId}
+          />
         </div>
       </div>
       
@@ -321,6 +397,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
         ref={containerRef}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
+        style={gridStyle}
       >
         <div
           className={cn(
@@ -329,25 +406,14 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
           )}
         >
           <div 
-            className="absolute w-full h-full"
+            className="absolute w-[5000px] h-[5000px]"
             style={{
               transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-              transformOrigin: "0 0"
+              transformOrigin: "0 0",
+              left: "-2500px",
+              top: "-2500px"
             }}
           >
-            {isGridVisible && (
-              <div className="absolute inset-0 grid grid-cols-[repeat(50,20px)] grid-rows-[repeat(50,20px)] opacity-20">
-                {Array.from({ length: 50 }).map((_, row) => (
-                  Array.from({ length: 50 }).map((_, col) => (
-                    <div 
-                      key={`${row}-${col}`}
-                      className="border-[0.5px] border-slate-300"
-                    />
-                  ))
-                ))}
-              </div>
-            )}
-            
             {/* Areas go at the bottom layer */}
             {areas && areas.map((area) => (
               <CanvasArea
@@ -382,6 +448,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
               <TableCard 
                 key={table.id}
                 table={table}
+                isSelected={table.id === selectedTableId}
                 onDragEnd={(_, info) => {
                   handleTableDragEnd(
                     table.id, 
@@ -391,6 +458,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
                     }
                   );
                 }}
+                onClick={() => handleTableClick(table.id)}
                 scale={scale}
               />
             ))}

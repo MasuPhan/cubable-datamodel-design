@@ -18,7 +18,7 @@ import { useModelContext } from "@/contexts/ModelContext";
 import { AddReferenceDialog } from "@/components/AddReferenceDialog";
 import { useToast } from "@/hooks/use-toast";
 
-export const TableCard = ({ table, onDragEnd, scale }) => {
+export const TableCard = ({ table, onDragEnd, scale, isSelected = false, onClick }) => {
   const { toast } = useToast();
   const { updateTableName, removeTable, addFieldToTable, addTable, updateField } = useModelContext();
   const [isEditing, setIsEditing] = useState(false);
@@ -170,6 +170,12 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
     };
   }, [scale]); // Add scale as a dependency
 
+  const handleCardClick = (e) => {
+    if (onClick) {
+      onClick(table.id);
+    }
+  };
+
   return (
     <motion.div
       drag
@@ -183,8 +189,12 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
         height: "auto"
       }}
       className="cursor-move select-none"
+      onClick={handleCardClick}
     >
-      <Card className="shadow-md border-2 border-indigo-100 overflow-hidden">
+      <Card className={cn(
+        "shadow-md border-2 border-indigo-100 overflow-hidden",
+        isSelected && "ring-2 ring-indigo-500 ring-offset-2 ring-offset-white"
+      )}>
         <CardHeader className="p-3 bg-indigo-50 flex flex-row items-center space-y-0 gap-2">
           <div className="cursor-move pr-2 hover:text-indigo-700">
             <GripVertical size={16} className="text-gray-400" />
@@ -204,7 +214,7 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
           ) : (
             <CardTitle
               className="text-sm flex-1 font-medium hover:text-indigo-700 cursor-pointer truncate"
-              onClick={() => setIsEditing(true)}
+              onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
               title={table.name}
             >
               {table.name}
@@ -218,16 +228,16 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => setIsEditing(true)}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}>
                 <Pencil size={14} className="mr-2" />
                 Rename
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDuplicate}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDuplicate(); }}>
                 <Copy size={14} className="mr-2" />
                 Duplicate
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleDelete} className="text-red-600">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDelete(); }} className="text-red-600">
                 <Trash2 size={14} className="mr-2" />
                 Delete Table
               </DropdownMenuItem>
@@ -244,8 +254,8 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
                 tableId={table.id}
                 isLast={index === table.fields.length - 1}
                 fieldIndex={index}
-                onMoveUp={handleMoveFieldUp}
-                onMoveDown={handleMoveFieldDown}
+                onMoveUp={(e) => { e.stopPropagation(); handleMoveFieldUp(index); }}
+                onMoveDown={(e) => { e.stopPropagation(); handleMoveFieldDown(index); }}
               />
             ))}
           </div>
@@ -255,7 +265,8 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
               variant="ghost"
               size="sm"
               className="flex-1 text-xs h-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 addFieldToTable(table.id, {
                   id: `field-${Date.now()}`,
                   name: "New Field",
@@ -276,7 +287,7 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
               variant="ghost"
               size="sm"
               className="flex-1 text-xs h-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-l border-slate-200"
-              onClick={() => setIsAddReferenceOpen(true)}
+              onClick={(e) => { e.stopPropagation(); setIsAddReferenceOpen(true); }}
             >
               <Database size={14} className="mr-1" />
               Add Reference
@@ -289,14 +300,14 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
       <div
         ref={resizeRef}
         className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
-        onMouseDown={handleResizeStart}
+        onMouseDown={(e) => { e.stopPropagation(); handleResizeStart(e); }}
       >
         <div className="w-2 h-2 border-b-2 border-r-2 border-indigo-400" />
       </div>
 
       <AddReferenceDialog
         open={isAddReferenceOpen}
-        onOpenChange={setIsAddReferenceOpen}
+        onOpenChange={(open) => { setIsAddReferenceOpen(open); }}
         sourceTableId={table.id}
       />
     </motion.div>
