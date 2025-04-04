@@ -28,6 +28,7 @@ const Index = () => {
   };
   
   const handleAddArea = () => {
+    console.log("Adding new area");
     if (window.modelDesignerAPI && window.modelDesignerAPI.addArea) {
       window.modelDesignerAPI.addArea();
     } else {
@@ -39,10 +40,15 @@ const Index = () => {
         width: 300,
         height: 200
       });
+      toast({
+        title: "Area added",
+        description: "New area has been added to the canvas"
+      });
     }
   };
   
   const handleAddNote = () => {
+    console.log("Adding new note");
     if (window.modelDesignerAPI && window.modelDesignerAPI.addNote) {
       window.modelDesignerAPI.addNote();
     } else {
@@ -53,10 +59,15 @@ const Index = () => {
         position: { x: 100, y: 100 },
         width: 200
       });
+      toast({
+        title: "Note added",
+        description: "New note has been added to the canvas"
+      });
     }
   };
 
   const handleAddTable = () => {
+    console.log("Adding new table");
     addTable({
       id: `table-${Date.now()}`,
       name: "New Table",

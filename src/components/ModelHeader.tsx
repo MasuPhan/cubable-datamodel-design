@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { templateModels } from "@/lib/templates";
@@ -68,6 +69,7 @@ export const ModelHeader = ({
   };
   
   const handleAddTable = () => {
+    console.log("ModelHeader: Calling onAddTable");
     onAddTable();
   };
   

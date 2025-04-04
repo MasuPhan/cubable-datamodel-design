@@ -57,6 +57,21 @@ export const AppMenu = ({
   const { toast } = useToast();
   const [isShareDialogOpen, setIsShareDialogOpen] = React.useState(false);
 
+  const handleAddTable = () => {
+    console.log("AppMenu: Calling onAddTable");
+    onAddTable();
+  };
+
+  const handleAddArea = () => {
+    console.log("AppMenu: Calling onAddArea");
+    onAddArea();
+  };
+
+  const handleAddNote = () => {
+    console.log("AppMenu: Calling onAddNote");
+    onAddNote();
+  };
+
   return (
     <>
       <Menubar className="rounded-none border-b border-none px-2 lg:px-4">
@@ -68,16 +83,16 @@ export const AppMenu = ({
         <MenubarMenu>
           <MenubarTrigger className="font-bold">File</MenubarTrigger>
           <MenubarContent>
-            <MenubarItem onClick={onAddTable}>
+            <MenubarItem onClick={handleAddTable}>
               New Table
               <MenubarShortcut>⌘T</MenubarShortcut>
             </MenubarItem>
-            <MenubarItem onClick={onAddArea}>
+            <MenubarItem onClick={handleAddArea}>
               <LayoutGrid className="mr-2 h-4 w-4" />
               New Area
               <MenubarShortcut>⌘A</MenubarShortcut>
             </MenubarItem>
-            <MenubarItem onClick={onAddNote}>
+            <MenubarItem onClick={handleAddNote}>
               <StickyNote className="mr-2 h-4 w-4" />
               New Note
               <MenubarShortcut>⌘N</MenubarShortcut>
