@@ -26,7 +26,9 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     updateAreaPosition,
     updateNote,
     removeNote,
-    updateNotePosition 
+    updateNotePosition,
+    addNote,
+    addArea
   } = useModelContext();
   
   const [isDraggingField, setIsDraggingField] = useState(false);
@@ -210,6 +212,50 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     removeNote(noteId);
   };
 
+  // New functions to create note and area directly
+  const handleAddNote = () => {
+    const centerX = window.innerWidth / 2 - 100;
+    const centerY = window.innerHeight / 2 - 100;
+    
+    const newNote = {
+      id: `note-${Date.now()}`,
+      content: "New note - click to edit",
+      color: "yellow", // Default color
+      position: { x: centerX, y: centerY },
+      width: 200
+    };
+    
+    console.log("Adding note directly:", newNote);
+    addNote(newNote);
+    
+    toast({
+      title: "Note added",
+      description: "A new note has been added to the canvas. Click to edit."
+    });
+  };
+  
+  const handleAddArea = () => {
+    const centerX = window.innerWidth / 2 - 150;
+    const centerY = window.innerHeight / 2 - 100;
+    
+    const newArea = {
+      id: `area-${Date.now()}`,
+      title: "New Area",
+      color: "indigo", // Default color
+      position: { x: centerX, y: centerY },
+      width: 300,
+      height: 200
+    };
+    
+    console.log("Adding area directly:", newArea);
+    addArea(newArea);
+    
+    toast({
+      title: "Area added",
+      description: "A new area has been added to the canvas. Click to edit."
+    });
+  };
+
   return (
     <div className="w-full h-full relative overflow-hidden bg-slate-50">
       <div className="absolute top-4 left-4 z-30 flex flex-col space-y-2">
@@ -258,6 +304,29 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
             />
           </svg>
         </Button>
+
+        <div className="space-y-2 mt-6 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleAddNote}
+            title="Add Note"
+            className="flex items-center justify-center w-full"
+          >
+            <StickyNote size={18} className="mr-2" />
+            <span className="text-xs">Add Note</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleAddArea}
+            title="Add Area"
+            className="flex items-center justify-center w-full"
+          >
+            <LayoutGrid size={18} className="mr-2" />
+            <span className="text-xs">Add Area</span>
+          </Button>
+        </div>
       </div>
       
       <div
@@ -294,18 +363,21 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
             "absolute inset-0 transition-opacity", 
             isDraggingField && "bg-blue-100 bg-opacity-30"
           )}
+          style={{ minHeight: "150vh", minWidth: "150vw" }}
         >
           <div 
             className="absolute w-full h-full"
             style={{
               transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-              transformOrigin: "0 0"
+              transformOrigin: "0 0",
+              minHeight: "150vh",
+              minWidth: "150vw"
             }}
           >
             {isGridVisible && (
-              <div className="absolute inset-0 grid grid-cols-[repeat(50,20px)] grid-rows-[repeat(50,20px)] opacity-20">
-                {Array.from({ length: 50 }).map((_, row) => (
-                  Array.from({ length: 50 }).map((_, col) => (
+              <div className="absolute inset-0 grid grid-cols-[repeat(100,20px)] grid-rows-[repeat(100,20px)] opacity-20" style={{ width: "200vw", height: "200vh" }}>
+                {Array.from({ length: 100 }).map((_, row) => (
+                  Array.from({ length: 100 }).map((_, col) => (
                     <div 
                       key={`${row}-${col}`}
                       className="border-[0.5px] border-slate-300"
@@ -315,7 +387,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
               </div>
             )}
             
-            {/* Areas go at the bottom layer */}
+            {/* Layer 1: Areas go at the bottom layer */}
             {areas && areas.length > 0 && areas.map((area) => (
               <CanvasArea
                 key={area.id}
@@ -327,12 +399,12 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
               />
             ))}
             
-            {/* Relationships */}
+            {/* Layer 2: Relationships */}
             {relationships && relationships.length > 0 && relationships.map((rel) => (
               <Relationship key={rel.id} relationship={rel} tables={tables} />
             ))}
             
-            {/* Tables */}
+            {/* Layer 3: Tables */}
             {tables && tables.length > 0 && tables.map((table) => (
               <TableCard 
                 key={table.id}
@@ -350,7 +422,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
               />
             ))}
             
-            {/* Notes go on the top layer */}
+            {/* Layer 4: Notes go on the top layer */}
             {notes && notes.length > 0 && notes.map((note) => (
               <CanvasNote
                 key={note.id}

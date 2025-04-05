@@ -4,16 +4,12 @@ import { ModelDesigner } from "@/components/ModelDesigner";
 import { ModelHeader } from "@/components/ModelHeader";
 import { useToast } from "@/hooks/use-toast";
 import { useModelContext } from "@/contexts/ModelContext";
-import { NewNoteDialog } from "@/components/NewNoteDialog";
-import { NewAreaDialog } from "@/components/NewAreaDialog";
 
 const Index = () => {
   const { toast } = useToast();
   const [isPaletteVisible, setIsPaletteVisible] = useState(true);
   const [isGridVisible, setIsGridVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
-  const [isAreaDialogOpen, setIsAreaDialogOpen] = useState(false);
   
   const { 
     addTable, 
@@ -39,11 +35,50 @@ const Index = () => {
   };
   
   const handleAddArea = () => {
-    setIsAreaDialogOpen(true);
+    const centerX = window.innerWidth / 2 - 150;
+    const centerY = window.innerHeight / 2 - 100;
+    
+    const newArea = {
+      id: `area-${Date.now()}`,
+      title: "New Area",
+      color: "indigo", // Default color
+      position: { x: centerX, y: centerY },
+      width: 300,
+      height: 200
+    };
+    
+    console.log("Adding area:", newArea);
+    addArea(newArea);
+    
+    toast({
+      title: "Area added",
+      description: "A new area has been added to the canvas. Click to edit."
+    });
+    
+    console.log("Areas after adding:", areas);
   };
   
   const handleAddNote = () => {
-    setIsNoteDialogOpen(true);
+    const centerX = window.innerWidth / 2 - 100;
+    const centerY = window.innerHeight / 2 - 100;
+    
+    const newNote = {
+      id: `note-${Date.now()}`,
+      content: "New note - click to edit",
+      color: "yellow", // Default color
+      position: { x: centerX, y: centerY },
+      width: 200
+    };
+    
+    console.log("Adding note:", newNote);
+    addNote(newNote);
+    
+    toast({
+      title: "Note added",
+      description: "A new note has been added to the canvas. Click to edit."
+    });
+    
+    console.log("Notes after adding:", notes);
   };
 
   const handleAddTable = () => {
@@ -73,53 +108,6 @@ const Index = () => {
     });
     
     console.log("Tables after adding:", tables);
-  };
-  
-  const createArea = (title: string, color: string) => {
-    const centerX = window.innerWidth / 2 - 150;
-    const centerY = window.innerHeight / 2 - 100;
-    
-    const newArea = {
-      id: `area-${Date.now()}`,
-      title: title,
-      color: color,
-      position: { x: centerX, y: centerY },
-      width: 300,
-      height: 200
-    };
-    
-    console.log("Adding area:", newArea);
-    addArea(newArea);
-    
-    toast({
-      title: "Area added",
-      description: "A new area has been added to the canvas"
-    });
-    
-    console.log("Areas after adding:", areas);
-  };
-  
-  const createNote = (content: string, color: string) => {
-    const centerX = window.innerWidth / 2 - 100;
-    const centerY = window.innerHeight / 2 - 100;
-    
-    const newNote = {
-      id: `note-${Date.now()}`,
-      content: content,
-      color: color,
-      position: { x: centerX, y: centerY },
-      width: 200
-    };
-    
-    console.log("Adding note:", newNote);
-    addNote(newNote);
-    
-    toast({
-      title: "Note added",
-      description: "A new note has been added to the canvas"
-    });
-    
-    console.log("Notes after adding:", notes);
   };
 
   // Set up event listeners for area and note updates from ModelDesigner
@@ -193,18 +181,6 @@ const Index = () => {
           isFullscreen={isFullscreen}
         />
       </div>
-      
-      <NewNoteDialog
-        open={isNoteDialogOpen}
-        onOpenChange={setIsNoteDialogOpen}
-        onCreateNote={createNote}
-      />
-      
-      <NewAreaDialog
-        open={isAreaDialogOpen}
-        onOpenChange={setIsAreaDialogOpen}
-        onCreateArea={createArea}
-      />
     </div>
   );
 };

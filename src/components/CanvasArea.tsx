@@ -90,7 +90,7 @@ export const CanvasArea = ({ area, onDragEnd, onUpdate, onDelete, scale }) => {
               className="text-sm flex-1 font-medium opacity-80 cursor-pointer"
               onClick={() => setIsEditing(true)}
             >
-              area_{area.id.split('-')[1] || '0'}
+              {title || `area_${area.id.split('-')[1] || '0'}`}
             </div>
           )}
           
