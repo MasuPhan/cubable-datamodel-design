@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TableCard } from "@/components/TableCard";
@@ -8,7 +7,7 @@ import { CanvasArea } from "@/components/CanvasArea";
 import { CanvasNote } from "@/components/CanvasNote";
 import { cn } from "@/lib/utils";
 import { useModelContext } from "@/contexts/ModelContext";
-import { ChevronRight, ChevronLeft, MinusCircle, PlusCircle, Maximize, Minimize, StickyNote, LayoutGrid } from "lucide-react";
+import { ChevronRight, ChevronLeft, MinusCircle, PlusCircle, StickyNote, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -38,10 +37,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   const [isPanning, setIsPanning] = useState(false);
   const [startPanPos, setStartPanPos] = useState({ x: 0, y: 0 });
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
-  
-  console.log("ModelDesigner rendering with tables:", tables);
-  console.log("ModelDesigner rendering with areas:", areas);
-  console.log("ModelDesigner rendering with notes:", notes);
   
   useEffect(() => {
     setIsPaletteCollapsed(!isPaletteVisible);
@@ -212,7 +207,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     removeNote(noteId);
   };
 
-  // New functions to create note and area directly
   const handleAddNote = () => {
     const centerX = window.innerWidth / 2 - 100;
     const centerY = window.innerHeight / 2 - 100;
@@ -225,7 +219,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       width: 200
     };
     
-    console.log("Adding note directly:", newNote);
     addNote(newNote);
     
     toast({
@@ -247,7 +240,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       height: 200
     };
     
-    console.log("Adding area directly:", newArea);
     addArea(newArea);
     
     toast({
@@ -308,23 +300,21 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
         <div className="space-y-2 mt-6 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={handleAddNote}
             title="Add Note"
-            className="flex items-center justify-center w-full"
+            className="flex items-center justify-center w-full h-8"
           >
-            <StickyNote size={18} className="mr-2" />
-            <span className="text-xs">Add Note</span>
+            <StickyNote size={18} />
           </Button>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={handleAddArea}
             title="Add Area"
-            className="flex items-center justify-center w-full"
+            className="flex items-center justify-center w-full h-8"
           >
-            <LayoutGrid size={18} className="mr-2" />
-            <span className="text-xs">Add Area</span>
+            <LayoutGrid size={18} />
           </Button>
         </div>
       </div>
@@ -363,19 +353,19 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
             "absolute inset-0 transition-opacity", 
             isDraggingField && "bg-blue-100 bg-opacity-30"
           )}
-          style={{ minHeight: "150vh", minWidth: "150vw" }}
+          style={{ minHeight: "200vh", minWidth: "200vw" }}
         >
           <div 
             className="absolute w-full h-full"
             style={{
               transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
               transformOrigin: "0 0",
-              minHeight: "150vh",
-              minWidth: "150vw"
+              minHeight: "200vh",
+              minWidth: "200vw"
             }}
           >
             {isGridVisible && (
-              <div className="absolute inset-0 grid grid-cols-[repeat(100,20px)] grid-rows-[repeat(100,20px)] opacity-20" style={{ width: "200vw", height: "200vh" }}>
+              <div className="absolute inset-0 grid grid-cols-[repeat(100,20px)] grid-rows-[repeat(100,20px)] opacity-20" style={{ width: "300vw", height: "300vh" }}>
                 {Array.from({ length: 100 }).map((_, row) => (
                   Array.from({ length: 100 }).map((_, col) => (
                     <div 
