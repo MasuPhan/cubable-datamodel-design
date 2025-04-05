@@ -59,6 +59,7 @@ export const CanvasArea = ({ area, onDragEnd, onUpdate, onDelete, scale }) => {
         position: "absolute",
         width: area.width,
         height: area.height,
+        zIndex: 10,
       }}
       className="cursor-move select-none"
     >
@@ -89,7 +90,7 @@ export const CanvasArea = ({ area, onDragEnd, onUpdate, onDelete, scale }) => {
               className="text-sm flex-1 font-medium opacity-80 cursor-pointer"
               onClick={() => setIsEditing(true)}
             >
-              {title}
+              area_{area.id.split('-')[1] || '0'}
             </div>
           )}
           

@@ -57,16 +57,18 @@ export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale }) => {
     >
       <Card 
         className={cn(
-          "shadow-md border-l-4 rounded-tr-md rounded-br-md rounded-tl-none rounded-bl-none",
+          "shadow-md rounded-md",
           colorOptions[color]
         )}
       >
-        <div className="p-1 flex items-center justify-between">
+        <div className="p-1 flex items-center justify-between border-b border-yellow-200">
           <div className="cursor-move">
             <GripVertical size={14} className="opacity-60" />
           </div>
           
-          <StickyNote size={14} className="opacity-60" />
+          <div className="text-xs opacity-70 font-medium">
+            note_{note.id.split('-')[1] || '0'}
+          </div>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -111,7 +113,7 @@ export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale }) => {
           </DropdownMenu>
         </div>
         
-        <CardContent className="p-3 pt-0">
+        <CardContent className="p-3 pt-2">
           {isEditing ? (
             <div className="space-y-2">
               <Textarea

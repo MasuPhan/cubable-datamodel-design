@@ -14,7 +14,21 @@ import { useToast } from "@/hooks/use-toast";
 
 export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen }) => {
   const { toast } = useToast();
-  const { tables, relationships, updateTablePosition, addFieldToTable, addArea, addNote, areas, notes, updateAreaPosition, updateNotePosition } = useModelContext();
+  const { 
+    tables, 
+    relationships, 
+    updateTablePosition, 
+    addFieldToTable, 
+    areas, 
+    notes,
+    updateArea,
+    removeArea,
+    updateAreaPosition,
+    updateNote,
+    removeNote,
+    updateNotePosition 
+  } = useModelContext();
+  
   const [isDraggingField, setIsDraggingField] = useState(false);
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -22,6 +36,10 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   const [isPanning, setIsPanning] = useState(false);
   const [startPanPos, setStartPanPos] = useState({ x: 0, y: 0 });
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
+  
+  console.log("ModelDesigner rendering with tables:", tables);
+  console.log("ModelDesigner rendering with areas:", areas);
+  console.log("ModelDesigner rendering with notes:", notes);
   
   useEffect(() => {
     setIsPaletteCollapsed(!isPaletteVisible);
@@ -150,44 +168,8 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     setPosition({ x: 0, y: 0 });
   };
 
-  const handleAddArea = () => {
-    const newArea = {
-      id: `area-${Date.now()}`,
-      title: "New Area",
-      color: "indigo",
-      position: {
-        x: -position.x / scale + 100,
-        y: -position.y / scale + 100
-      },
-      width: 300,
-      height: 200
-    };
-    addArea(newArea);
-    toast({
-      title: "Area added",
-      description: "New area has been added to the canvas"
-    });
-  };
-
-  const handleAddNote = () => {
-    const newNote = {
-      id: `note-${Date.now()}`,
-      content: "Add your note here...",
-      color: "yellow",
-      position: {
-        x: -position.x / scale + 100,
-        y: -position.y / scale + 100
-      },
-      width: 200
-    };
-    addNote(newNote);
-    toast({
-      title: "Note added",
-      description: "New note has been added to the canvas"
-    });
-  };
-
   const handleAreaDragEnd = (id, dragInfo) => {
+    console.log("Area drag end:", id, dragInfo);
     const area = areas.find(a => a.id === id);
     if (area) {
       updateAreaPosition(id, {
@@ -197,7 +179,18 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     }
   };
 
+  const handleAreaUpdate = (updatedArea) => {
+    console.log("Updating area:", updatedArea);
+    updateArea(updatedArea);
+  };
+
+  const handleAreaDelete = (areaId) => {
+    console.log("Deleting area:", areaId);
+    removeArea(areaId);
+  };
+
   const handleNoteDragEnd = (id, dragInfo) => {
+    console.log("Note drag end:", id, dragInfo);
     const note = notes.find(n => n.id === id);
     if (note) {
       updateNotePosition(id, {
@@ -207,23 +200,15 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     }
   };
 
-  // Expose methods for parent components to use
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.modelDesignerAPI = {
-        addArea: handleAddArea,
-        addNote: handleAddNote,
-        zoomIn,
-        zoomOut,
-        resetView
-      };
-    }
-    return () => {
-      if (typeof window !== 'undefined') {
-        delete window.modelDesignerAPI;
-      }
-    };
-  }, [position, scale]);
+  const handleNoteUpdate = (updatedNote) => {
+    console.log("Updating note:", updatedNote);
+    updateNote(updatedNote);
+  };
+
+  const handleNoteDelete = (noteId) => {
+    console.log("Deleting note:", noteId);
+    removeNote(noteId);
+  };
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-slate-50">
@@ -272,24 +257,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
               fill="none"
             />
           </svg>
-        </Button>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          onClick={handleAddArea}
-          title="Add Area"
-          className="bg-white"
-        >
-          <LayoutGrid size={18} />
-        </Button>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          onClick={handleAddNote}
-          title="Add Note"
-          className="bg-white"
-        >
-          <StickyNote size={18} />
         </Button>
       </div>
       
@@ -349,36 +316,24 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
             )}
             
             {/* Areas go at the bottom layer */}
-            {areas && areas.map((area) => (
+            {areas && areas.length > 0 && areas.map((area) => (
               <CanvasArea
                 key={area.id}
                 area={area}
                 onDragEnd={(_, info) => handleAreaDragEnd(area.id, info)}
-                onUpdate={(updatedArea) => {
-                  // Update area properties (in context)
-                  const event = new CustomEvent('updateArea', {
-                    detail: { area: updatedArea }
-                  });
-                  window.dispatchEvent(event);
-                }}
-                onDelete={(areaId) => {
-                  // Delete area (in context)
-                  const event = new CustomEvent('deleteArea', {
-                    detail: { areaId }
-                  });
-                  window.dispatchEvent(event);
-                }}
+                onUpdate={(updatedArea) => handleAreaUpdate(updatedArea)}
+                onDelete={(areaId) => handleAreaDelete(areaId)}
                 scale={scale}
               />
             ))}
             
             {/* Relationships */}
-            {relationships.map((rel) => (
+            {relationships && relationships.length > 0 && relationships.map((rel) => (
               <Relationship key={rel.id} relationship={rel} tables={tables} />
             ))}
             
             {/* Tables */}
-            {tables.map((table) => (
+            {tables && tables.length > 0 && tables.map((table) => (
               <TableCard 
                 key={table.id}
                 table={table}
@@ -396,25 +351,13 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
             ))}
             
             {/* Notes go on the top layer */}
-            {notes && notes.map((note) => (
+            {notes && notes.length > 0 && notes.map((note) => (
               <CanvasNote
                 key={note.id}
                 note={note}
                 onDragEnd={(_, info) => handleNoteDragEnd(note.id, info)}
-                onUpdate={(updatedNote) => {
-                  // Update note properties (in context)
-                  const event = new CustomEvent('updateNote', {
-                    detail: { note: updatedNote }
-                  });
-                  window.dispatchEvent(event);
-                }}
-                onDelete={(noteId) => {
-                  // Delete note (in context)
-                  const event = new CustomEvent('deleteNote', {
-                    detail: { noteId }
-                  });
-                  window.dispatchEvent(event);
-                }}
+                onUpdate={(updatedNote) => handleNoteUpdate(updatedNote)}
+                onDelete={(noteId) => handleNoteDelete(noteId)}
                 scale={scale}
               />
             ))}
@@ -423,7 +366,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       </div>
       
       <div className="absolute bottom-4 left-4 text-xs text-gray-500">
-        Tip: Use arrow keys to move fields up/down. Hold mouse wheel or Ctrl+drag to pan. Scroll to zoom.
+        Tip: Hold mouse wheel or Ctrl+drag to pan. Scroll to zoom.
       </div>
     </div>
   );
