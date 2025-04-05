@@ -11,14 +11,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Pencil, MoreVertical, Trash2, Plus, GripVertical, Database, Copy } from "lucide-react";
+import { Pencil, MoreVertical, Trash2, Plus, GripVertical, Database, Copy, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FieldRow } from "@/components/FieldRow";
 import { useModelContext } from "@/contexts/ModelContext";
 import { AddReferenceDialog } from "@/components/AddReferenceDialog";
 import { useToast } from "@/hooks/use-toast";
 
-export const TableCard = ({ table, onDragEnd, scale }) => {
+export const TableCard = ({ table, onDragEnd, scale, onMoveLayerUp, onMoveLayerDown }) => {
   const { toast } = useToast();
   const { updateTableName, removeTable, addFieldToTable, addTable, updateField } = useModelContext();
   const [isEditing, setIsEditing] = useState(false);
@@ -180,7 +180,8 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
       style={{ 
         position: "absolute",
         width: width,
-        height: "auto"
+        height: "auto",
+        zIndex: table.zIndex || 20 // Ensure tables have zIndex
       }}
       className="cursor-move select-none"
     >
@@ -225,6 +226,15 @@ export const TableCard = ({ table, onDragEnd, scale }) => {
               <DropdownMenuItem onClick={handleDuplicate}>
                 <Copy size={14} className="mr-2" />
                 Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onMoveLayerUp(table.id)}>
+                <ArrowUp size={14} className="mr-2" />
+                Move Up
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onMoveLayerDown(table.id)}>
+                <ArrowDown size={14} className="mr-2" />
+                Move Down
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleDelete} className="text-red-600">

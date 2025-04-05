@@ -125,14 +125,14 @@ export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale, onMoveL
         
         <CardContent className="p-3 pt-2 flex-grow overflow-auto">
           {isEditing ? (
-            <div className="space-y-2 h-full">
+            <div className="space-y-2 h-full flex flex-col">
               <Textarea
                 value={content}
                 onChange={handleContentChange}
-                className="min-h-[100px] text-sm resize-y h-full"
+                className="min-h-[100px] text-sm resize-y flex-grow"
                 autoFocus
               />
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-inherit">
                 <Button 
                   variant="outline" 
                   size="sm" 

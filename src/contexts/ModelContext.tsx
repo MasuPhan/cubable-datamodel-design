@@ -164,9 +164,14 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
   switch (action.type) {
     case 'ADD_TABLE':
       console.log("ADD_TABLE reducer called with", action.payload);
+      // Ensure new tables have a default zIndex of 20
+      const tableWithZIndex = {
+        ...action.payload,
+        zIndex: 20 // Set default zIndex for tables
+      };
       return saveHistory(
         state,
-        [...state.tables, action.payload],
+        [...state.tables, tableWithZIndex],
         state.relationships,
         state.areas,
         state.notes
@@ -473,32 +478,26 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
       let updatedTables = [...state.tables];
       
       if (itemType === 'note') {
-        const noteIndex = updatedNotes.findIndex(note => note.id === itemId);
-        if (noteIndex >= 0) {
-          const note = updatedNotes[noteIndex];
-          updatedNotes = updatedNotes.map(n => {
-            if (n.id === itemId) {
-              return { ...n, zIndex: (n.zIndex || 30) + 1 };
-            }
-            return n;
-          });
-        }
+        updatedNotes = updatedNotes.map(n => {
+          if (n.id === itemId) {
+            return { ...n, zIndex: (n.zIndex || 30) + 1 };
+          }
+          return n;
+        });
       } else if (itemType === 'area') {
-        const areaIndex = updatedAreas.findIndex(area => area.id === itemId);
-        if (areaIndex >= 0) {
-          const area = updatedAreas[areaIndex];
-          updatedAreas = updatedAreas.map(a => {
-            if (a.id === itemId) {
-              return { ...a, zIndex: (a.zIndex || 10) + 1 };
-            }
-            return a;
-          });
-        }
+        updatedAreas = updatedAreas.map(a => {
+          if (a.id === itemId) {
+            return { ...a, zIndex: (a.zIndex || 10) + 1 };
+          }
+          return a;
+        });
       } else if (itemType === 'table') {
-        const tableIndex = updatedTables.findIndex(table => table.id === itemId);
-        if (tableIndex >= 0) {
-          // Tables have constant zIndex of 20, but we can implement layer ordering within tables if needed
-        }
+        updatedTables = updatedTables.map(t => {
+          if (t.id === itemId) {
+            return { ...t, zIndex: (t.zIndex || 20) + 1 };
+          }
+          return t;
+        });
       }
       
       return saveHistory(
@@ -517,32 +516,26 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
       let updatedTables = [...state.tables];
       
       if (itemType === 'note') {
-        const noteIndex = updatedNotes.findIndex(note => note.id === itemId);
-        if (noteIndex >= 0) {
-          const note = updatedNotes[noteIndex];
-          updatedNotes = updatedNotes.map(n => {
-            if (n.id === itemId) {
-              return { ...n, zIndex: Math.max((n.zIndex || 30) - 1, 11) }; // Don't go below tables
-            }
-            return n;
-          });
-        }
+        updatedNotes = updatedNotes.map(n => {
+          if (n.id === itemId) {
+            return { ...n, zIndex: Math.max((n.zIndex || 30) - 1, 21) }; // Don't go below tables
+          }
+          return n;
+        });
       } else if (itemType === 'area') {
-        const areaIndex = updatedAreas.findIndex(area => area.id === itemId);
-        if (areaIndex >= 0) {
-          const area = updatedAreas[areaIndex];
-          updatedAreas = updatedAreas.map(a => {
-            if (a.id === itemId) {
-              return { ...a, zIndex: Math.max((a.zIndex || 10) - 1, 1) };
-            }
-            return a;
-          });
-        }
+        updatedAreas = updatedAreas.map(a => {
+          if (a.id === itemId) {
+            return { ...a, zIndex: Math.max((a.zIndex || 10) - 1, 1) };
+          }
+          return a;
+        });
       } else if (itemType === 'table') {
-        const tableIndex = updatedTables.findIndex(table => table.id === itemId);
-        if (tableIndex >= 0) {
-          // Tables have constant zIndex of 20, but we can implement layer ordering within tables if needed
-        }
+        updatedTables = updatedTables.map(t => {
+          if (t.id === itemId) {
+            return { ...t, zIndex: Math.max((t.zIndex || 20) - 1, 11) }; // Don't go below areas
+          }
+          return t;
+        });
       }
       
       return saveHistory(
@@ -566,7 +559,7 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
           notes: JSON.parse(JSON.stringify(historicState.notes)),
           historyIndex: newIndex,
           canUndo: newIndex > 0,
-          canRedo: true,
+          canRedo: false,
         };
       }
       return state;

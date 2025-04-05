@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TableCard } from "@/components/TableCard";
@@ -214,7 +213,8 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       color: "yellow", // Default color
       position: { x: centerX, y: centerY },
       width: 200,
-      height: 150 // Add default height
+      height: 150, // Add default height
+      zIndex: 30 // Explicitly set zIndex for notes
     };
     
     addNote(newNote);
@@ -235,7 +235,8 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       color: "indigo", // Default color
       position: { x: centerX, y: centerY },
       width: 300,
-      height: 200
+      height: 200,
+      zIndex: 10 // Explicitly set zIndex for areas
     };
     
     addArea(newArea);
@@ -248,23 +249,13 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   
   // Handle layer ordering
   const handleMoveLayerUp = (itemId) => {
-    if (itemId.startsWith('note-')) {
-      moveLayerUp(itemId, 'note');
-    } else if (itemId.startsWith('area-')) {
-      moveLayerUp(itemId, 'area');
-    } else if (itemId.startsWith('table-')) {
-      moveLayerUp(itemId, 'table');
-    }
+    moveLayerUp(itemId, itemId.startsWith('note-') ? 'note' : 
+                        itemId.startsWith('area-') ? 'area' : 'table');
   };
   
   const handleMoveLayerDown = (itemId) => {
-    if (itemId.startsWith('note-')) {
-      moveLayerDown(itemId, 'note');
-    } else if (itemId.startsWith('area-')) {
-      moveLayerDown(itemId, 'area');
-    } else if (itemId.startsWith('table-')) {
-      moveLayerDown(itemId, 'table');
-    }
+    moveLayerDown(itemId, itemId.startsWith('note-') ? 'note' : 
+                          itemId.startsWith('area-') ? 'area' : 'table');
   };
 
   return (
@@ -316,24 +307,24 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
           </svg>
         </Button>
 
-        <div className="space-y-2 mt-6 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
+        <div className="space-y-2 mt-2 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
           <Button
             variant="ghost"
             size="icon"
             onClick={handleAddNote}
             title="Add Note"
-            className="flex items-center justify-center w-full h-8"
+            className="flex items-center justify-center w-8 h-8"
           >
-            <StickyNote size={18} />
+            <StickyNote size={16} />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={handleAddArea}
             title="Add Area"
-            className="flex items-center justify-center w-full h-8"
+            className="flex items-center justify-center w-8 h-8"
           >
-            <LayoutGrid size={18} />
+            <LayoutGrid size={16} />
           </Button>
         </div>
       </div>
@@ -372,21 +363,21 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
             "absolute inset-0 transition-opacity", 
             isDraggingField && "bg-blue-100 bg-opacity-30"
           )}
-          style={{ minHeight: "200vh", minWidth: "200vw" }}
+          style={{ minHeight: "600vh", minWidth: "600vw" }}
         >
           <div 
             className="absolute w-full h-full"
             style={{
               transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
               transformOrigin: "0 0",
-              minHeight: "200vh",
-              minWidth: "200vw"
+              minHeight: "600vh",
+              minWidth: "600vw"
             }}
           >
             {isGridVisible && (
-              <div className="absolute inset-0 grid grid-cols-[repeat(100,20px)] grid-rows-[repeat(100,20px)] opacity-20" style={{ width: "300vw", height: "300vh" }}>
-                {Array.from({ length: 100 }).map((_, row) => (
-                  Array.from({ length: 100 }).map((_, col) => (
+              <div className="absolute inset-0 grid grid-cols-[repeat(300,20px)] grid-rows-[repeat(300,20px)] opacity-20" style={{ width: "600vw", height: "600vh" }}>
+                {Array.from({ length: 300 }).map((_, row) => (
+                  Array.from({ length: 300 }).map((_, col) => (
                     <div 
                       key={`${row}-${col}`}
                       className="border-[0.5px] border-slate-300"
@@ -430,6 +421,8 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
                   );
                 }}
                 scale={scale}
+                onMoveLayerUp={(tableId) => handleMoveLayerUp(tableId)}
+                onMoveLayerDown={(tableId) => handleMoveLayerDown(tableId)}
               />
             ))}
             
