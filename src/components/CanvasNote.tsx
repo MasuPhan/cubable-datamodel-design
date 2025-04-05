@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, GripVertical, StickyNote, MoreVertical } from "lucide-react";
+import { Trash2, GripVertical, StickyNote, MoreVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale }) => {
+export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale, onMoveLayerUp, onMoveLayerDown }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(note.content);
   const [color, setColor] = useState(note.color || "yellow");
@@ -51,13 +51,14 @@ export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale }) => {
       style={{
         position: "absolute",
         width: note.width,
-        height: "auto",
+        height: note.height || "auto",
+        zIndex: note.zIndex || 30,
       }}
       className="cursor-move select-none"
     >
       <Card 
         className={cn(
-          "shadow-md rounded-md",
+          "shadow-md rounded-md h-full flex flex-col",
           colorOptions[color]
         )}
       >
@@ -105,6 +106,15 @@ export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale }) => {
                 </div>
               </div>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onMoveLayerUp(note.id)}>
+                <ArrowUp size={14} className="mr-2" />
+                Move Up
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onMoveLayerDown(note.id)}>
+                <ArrowDown size={14} className="mr-2" />
+                Move Down
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onDelete(note.id)} className="text-red-600">
                 <Trash2 size={14} className="mr-2" />
                 Delete Note
@@ -113,13 +123,13 @@ export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale }) => {
           </DropdownMenu>
         </div>
         
-        <CardContent className="p-3 pt-2">
+        <CardContent className="p-3 pt-2 flex-grow overflow-auto">
           {isEditing ? (
-            <div className="space-y-2">
+            <div className="space-y-2 h-full">
               <Textarea
                 value={content}
                 onChange={handleContentChange}
-                className="min-h-[100px] text-sm resize-y"
+                className="min-h-[100px] text-sm resize-y h-full"
                 autoFocus
               />
               <div className="flex justify-end gap-2">
@@ -142,7 +152,7 @@ export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale }) => {
             </div>
           ) : (
             <div 
-              className="text-sm whitespace-pre-wrap break-words cursor-text"
+              className="text-sm whitespace-pre-wrap break-words cursor-text h-full overflow-auto"
               onClick={() => setIsEditing(true)}
             >
               {content}
@@ -151,9 +161,77 @@ export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale }) => {
         </CardContent>
       </Card>
       
-      {/* Resize handle */}
+      {/* Resize handles */}
+      {/* Bottom right corner */}
       <div 
         className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          const startWidth = note.width;
+          const startHeight = note.height || 100;
+          const startX = e.clientX;
+          const startY = e.clientY;
+          
+          const onMouseMove = (e) => {
+            const dx = (e.clientX - startX) / scale;
+            const dy = (e.clientY - startY) / scale;
+            onUpdate({ 
+              ...note, 
+              width: Math.max(startWidth + dx, 200),
+              height: Math.max(startHeight + dy, 100) 
+            });
+          };
+          
+          const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+          };
+          
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+        }}
+      >
+        <div className={cn(
+          "w-2 h-2 border-b-2 border-r-2",
+          color === "yellow" ? "border-yellow-400" :
+          color === "blue" ? "border-blue-400" :
+          color === "green" ? "border-green-400" :
+          color === "pink" ? "border-pink-400" :
+          "border-purple-400"
+        )} />
+      </div>
+      
+      {/* Bottom edge */}
+      <div 
+        className="absolute bottom-0 left-2 right-2 h-2 cursor-ns-resize"
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          const startHeight = note.height || 100;
+          const startY = e.clientY;
+          
+          const onMouseMove = (e) => {
+            const dy = (e.clientY - startY) / scale;
+            onUpdate({ 
+              ...note, 
+              height: Math.max(startHeight + dy, 100) 
+            });
+          };
+          
+          const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+          };
+          
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+        }}
+      >
+        <div className="w-full h-1 bg-transparent" />
+      </div>
+      
+      {/* Right edge */}
+      <div 
+        className="absolute top-2 bottom-2 right-0 w-2 cursor-ew-resize"
         onMouseDown={(e) => {
           e.stopPropagation();
           const startWidth = note.width;
@@ -176,14 +254,7 @@ export const CanvasNote = ({ note, onDragEnd, onUpdate, onDelete, scale }) => {
           document.addEventListener('mouseup', onMouseUp);
         }}
       >
-        <div className={cn(
-          "w-2 h-2 border-b-2 border-r-2",
-          color === "yellow" ? "border-yellow-400" :
-          color === "blue" ? "border-blue-400" :
-          color === "green" ? "border-green-400" :
-          color === "pink" ? "border-pink-400" :
-          "border-purple-400"
-        )} />
+        <div className="h-full w-1 bg-transparent" />
       </div>
     </motion.div>
   );

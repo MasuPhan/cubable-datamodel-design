@@ -1,3 +1,4 @@
+
 import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TableCard } from "@/components/TableCard";
@@ -27,7 +28,9 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     removeNote,
     updateNotePosition,
     addNote,
-    addArea
+    addArea,
+    moveLayerUp,
+    moveLayerDown
   } = useModelContext();
   
   const [isDraggingField, setIsDraggingField] = useState(false);
@@ -166,7 +169,6 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   };
 
   const handleAreaDragEnd = (id, dragInfo) => {
-    console.log("Area drag end:", id, dragInfo);
     const area = areas.find(a => a.id === id);
     if (area) {
       updateAreaPosition(id, {
@@ -177,17 +179,14 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   };
 
   const handleAreaUpdate = (updatedArea) => {
-    console.log("Updating area:", updatedArea);
     updateArea(updatedArea);
   };
 
   const handleAreaDelete = (areaId) => {
-    console.log("Deleting area:", areaId);
     removeArea(areaId);
   };
 
   const handleNoteDragEnd = (id, dragInfo) => {
-    console.log("Note drag end:", id, dragInfo);
     const note = notes.find(n => n.id === id);
     if (note) {
       updateNotePosition(id, {
@@ -198,12 +197,10 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   };
 
   const handleNoteUpdate = (updatedNote) => {
-    console.log("Updating note:", updatedNote);
     updateNote(updatedNote);
   };
 
   const handleNoteDelete = (noteId) => {
-    console.log("Deleting note:", noteId);
     removeNote(noteId);
   };
 
@@ -216,7 +213,8 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       content: "New note - click to edit",
       color: "yellow", // Default color
       position: { x: centerX, y: centerY },
-      width: 200
+      width: 200,
+      height: 150 // Add default height
     };
     
     addNote(newNote);
@@ -246,6 +244,27 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       title: "Area added",
       description: "A new area has been added to the canvas. Click to edit."
     });
+  };
+  
+  // Handle layer ordering
+  const handleMoveLayerUp = (itemId) => {
+    if (itemId.startsWith('note-')) {
+      moveLayerUp(itemId, 'note');
+    } else if (itemId.startsWith('area-')) {
+      moveLayerUp(itemId, 'area');
+    } else if (itemId.startsWith('table-')) {
+      moveLayerUp(itemId, 'table');
+    }
+  };
+  
+  const handleMoveLayerDown = (itemId) => {
+    if (itemId.startsWith('note-')) {
+      moveLayerDown(itemId, 'note');
+    } else if (itemId.startsWith('area-')) {
+      moveLayerDown(itemId, 'area');
+    } else if (itemId.startsWith('table-')) {
+      moveLayerDown(itemId, 'table');
+    }
   };
 
   return (
@@ -385,6 +404,8 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
                 onDragEnd={(_, info) => handleAreaDragEnd(area.id, info)}
                 onUpdate={(updatedArea) => handleAreaUpdate(updatedArea)}
                 onDelete={(areaId) => handleAreaDelete(areaId)}
+                onMoveLayerUp={handleMoveLayerUp}
+                onMoveLayerDown={handleMoveLayerDown}
                 scale={scale}
               />
             ))}
@@ -420,6 +441,8 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
                 onDragEnd={(_, info) => handleNoteDragEnd(note.id, info)}
                 onUpdate={(updatedNote) => handleNoteUpdate(updatedNote)}
                 onDelete={(noteId) => handleNoteDelete(noteId)}
+                onMoveLayerUp={handleMoveLayerUp}
+                onMoveLayerDown={handleMoveLayerDown}
                 scale={scale}
               />
             ))}

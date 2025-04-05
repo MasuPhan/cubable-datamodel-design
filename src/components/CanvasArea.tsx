@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MoreVertical, Trash2, Pencil, GripVertical } from "lucide-react";
+import { MoreVertical, Trash2, Pencil, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-export const CanvasArea = ({ area, onDragEnd, onUpdate, onDelete, scale }) => {
+export const CanvasArea = ({ area, onDragEnd, onUpdate, onDelete, scale, onMoveLayerUp, onMoveLayerDown }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(area.title);
   const [color, setColor] = useState(area.color || "indigo");
@@ -59,7 +59,7 @@ export const CanvasArea = ({ area, onDragEnd, onUpdate, onDelete, scale }) => {
         position: "absolute",
         width: area.width,
         height: area.height,
-        zIndex: 10,
+        zIndex: area.zIndex || 10,
       }}
       className="cursor-move select-none"
     >
@@ -131,6 +131,15 @@ export const CanvasArea = ({ area, onDragEnd, onUpdate, onDelete, scale }) => {
                 </div>
               </div>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onMoveLayerUp(area.id)}>
+                <ArrowUp size={14} className="mr-2" />
+                Move Up
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onMoveLayerDown(area.id)}>
+                <ArrowDown size={14} className="mr-2" />
+                Move Down
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onDelete(area.id)} className="text-red-600">
                 <Trash2 size={14} className="mr-2" />
                 Delete Area
@@ -140,7 +149,8 @@ export const CanvasArea = ({ area, onDragEnd, onUpdate, onDelete, scale }) => {
         </CardHeader>
       </Card>
       
-      {/* Resize handle */}
+      {/* Resize handles */}
+      {/* Bottom right corner */}
       <div 
         className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
         onMouseDown={(e) => {
@@ -178,6 +188,62 @@ export const CanvasArea = ({ area, onDragEnd, onUpdate, onDelete, scale }) => {
           color === "blue" ? "border-blue-400" :
           "border-purple-400"
         )} />
+      </div>
+      
+      {/* Bottom edge */}
+      <div 
+        className="absolute bottom-0 left-2 right-2 h-2 cursor-ns-resize"
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          const startHeight = area.height;
+          const startY = e.clientY;
+          
+          const onMouseMove = (e) => {
+            const dy = (e.clientY - startY) / scale;
+            onUpdate({ 
+              ...area, 
+              height: Math.max(startHeight + dy, 100) 
+            });
+          };
+          
+          const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+          };
+          
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+        }}
+      >
+        <div className="w-full h-1 bg-transparent" />
+      </div>
+      
+      {/* Right edge */}
+      <div 
+        className="absolute top-2 bottom-2 right-0 w-2 cursor-ew-resize"
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          const startWidth = area.width;
+          const startX = e.clientX;
+          
+          const onMouseMove = (e) => {
+            const dx = (e.clientX - startX) / scale;
+            onUpdate({ 
+              ...area, 
+              width: Math.max(startWidth + dx, 200),
+            });
+          };
+          
+          const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+          };
+          
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+        }}
+      >
+        <div className="h-full w-1 bg-transparent" />
       </div>
     </motion.div>
   );

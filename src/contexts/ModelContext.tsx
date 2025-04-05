@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 
 export interface Field {
@@ -45,6 +44,7 @@ export interface Area {
   position: { x: number; y: number };
   width: number;
   height: number;
+  zIndex?: number;
 }
 
 export interface Note {
@@ -53,6 +53,8 @@ export interface Note {
   color: string;
   position: { x: number; y: number };
   width: number;
+  height?: number;
+  zIndex?: number;
 }
 
 interface ModelState {
@@ -86,6 +88,8 @@ type ModelAction =
   | { type: 'UPDATE_NOTE'; payload: Note }
   | { type: 'REMOVE_NOTE'; payload: string }
   | { type: 'UPDATE_NOTE_POSITION'; payload: { noteId: string; position: { x: number; y: number } } }
+  | { type: 'MOVE_LAYER_UP'; payload: { itemId: string; itemType: 'note' | 'area' | 'table' } }
+  | { type: 'MOVE_LAYER_DOWN'; payload: { itemId: string; itemType: 'note' | 'area' | 'table' } }
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'IMPORT_MODEL'; payload: { tables: Table[]; relationships: Relationship[]; areas: Area[]; notes: Note[] } };
@@ -110,6 +114,8 @@ interface ModelContextType extends ModelState {
   updateNote: (note: Note) => void;
   removeNote: (noteId: string) => void;
   updateNotePosition: (noteId: string, position: { x: number; y: number }) => void;
+  moveLayerUp: (itemId: string, itemType: 'note' | 'area' | 'table') => void;
+  moveLayerDown: (itemId: string, itemType: 'note' | 'area' | 'table') => void;
   undo: () => void;
   redo: () => void;
   importModel: (model: { tables: Table[]; relationships: Relationship[]; areas: Area[]; notes: Note[] }) => void;
@@ -380,11 +386,16 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
     
     case 'ADD_AREA': {
       console.log("ADD_AREA reducer called with", action.payload);
+      // Set default zIndex for new areas (should be lowest)
+      const areaWithZIndex = {
+        ...action.payload,
+        zIndex: 10
+      };
       return saveHistory(
         state,
         state.tables,
         state.relationships,
-        [...state.areas, action.payload],
+        [...state.areas, areaWithZIndex],
         state.notes
       );
     }
@@ -416,12 +427,17 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
     
     case 'ADD_NOTE': {
       console.log("ADD_NOTE reducer called with", action.payload);
+      // Set default zIndex for new notes (should be highest)
+      const noteWithZIndex = {
+        ...action.payload,
+        zIndex: 30
+      };
       return saveHistory(
         state,
         state.tables,
         state.relationships,
         state.areas,
-        [...state.notes, action.payload]
+        [...state.notes, noteWithZIndex]
       );
     }
     
@@ -448,6 +464,94 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
         ...state,
         notes: updatedNotes,
       };
+    }
+    
+    case 'MOVE_LAYER_UP': {
+      const { itemId, itemType } = action.payload;
+      let updatedNotes = [...state.notes];
+      let updatedAreas = [...state.areas];
+      let updatedTables = [...state.tables];
+      
+      if (itemType === 'note') {
+        const noteIndex = updatedNotes.findIndex(note => note.id === itemId);
+        if (noteIndex >= 0) {
+          const note = updatedNotes[noteIndex];
+          updatedNotes = updatedNotes.map(n => {
+            if (n.id === itemId) {
+              return { ...n, zIndex: (n.zIndex || 30) + 1 };
+            }
+            return n;
+          });
+        }
+      } else if (itemType === 'area') {
+        const areaIndex = updatedAreas.findIndex(area => area.id === itemId);
+        if (areaIndex >= 0) {
+          const area = updatedAreas[areaIndex];
+          updatedAreas = updatedAreas.map(a => {
+            if (a.id === itemId) {
+              return { ...a, zIndex: (a.zIndex || 10) + 1 };
+            }
+            return a;
+          });
+        }
+      } else if (itemType === 'table') {
+        const tableIndex = updatedTables.findIndex(table => table.id === itemId);
+        if (tableIndex >= 0) {
+          // Tables have constant zIndex of 20, but we can implement layer ordering within tables if needed
+        }
+      }
+      
+      return saveHistory(
+        state,
+        updatedTables,
+        state.relationships,
+        updatedAreas,
+        updatedNotes
+      );
+    }
+    
+    case 'MOVE_LAYER_DOWN': {
+      const { itemId, itemType } = action.payload;
+      let updatedNotes = [...state.notes];
+      let updatedAreas = [...state.areas];
+      let updatedTables = [...state.tables];
+      
+      if (itemType === 'note') {
+        const noteIndex = updatedNotes.findIndex(note => note.id === itemId);
+        if (noteIndex >= 0) {
+          const note = updatedNotes[noteIndex];
+          updatedNotes = updatedNotes.map(n => {
+            if (n.id === itemId) {
+              return { ...n, zIndex: Math.max((n.zIndex || 30) - 1, 11) }; // Don't go below tables
+            }
+            return n;
+          });
+        }
+      } else if (itemType === 'area') {
+        const areaIndex = updatedAreas.findIndex(area => area.id === itemId);
+        if (areaIndex >= 0) {
+          const area = updatedAreas[areaIndex];
+          updatedAreas = updatedAreas.map(a => {
+            if (a.id === itemId) {
+              return { ...a, zIndex: Math.max((a.zIndex || 10) - 1, 1) };
+            }
+            return a;
+          });
+        }
+      } else if (itemType === 'table') {
+        const tableIndex = updatedTables.findIndex(table => table.id === itemId);
+        if (tableIndex >= 0) {
+          // Tables have constant zIndex of 20, but we can implement layer ordering within tables if needed
+        }
+      }
+      
+      return saveHistory(
+        state,
+        updatedTables,
+        state.relationships,
+        updatedAreas,
+        updatedNotes
+      );
     }
     
     case 'UNDO': {
@@ -585,6 +689,14 @@ export const ModelProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     dispatch({ type: 'UPDATE_NOTE_POSITION', payload: { noteId, position } });
   };
 
+  const moveLayerUp = (itemId: string, itemType: 'note' | 'area' | 'table') => {
+    dispatch({ type: 'MOVE_LAYER_UP', payload: { itemId, itemType } });
+  };
+
+  const moveLayerDown = (itemId: string, itemType: 'note' | 'area' | 'table') => {
+    dispatch({ type: 'MOVE_LAYER_DOWN', payload: { itemId, itemType } });
+  };
+
   const undo = () => {
     dispatch({ type: 'UNDO' });
   };
@@ -607,7 +719,6 @@ export const ModelProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
   };
 
-  // Set up event listeners for area and note updates from events
   useEffect(() => {
     const handleContextUpdateArea = (e) => {
       const { area } = e.detail;
@@ -671,6 +782,8 @@ export const ModelProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     updateNote,
     removeNote,
     updateNotePosition,
+    moveLayerUp,
+    moveLayerDown,
     undo,
     redo,
     importModel,
