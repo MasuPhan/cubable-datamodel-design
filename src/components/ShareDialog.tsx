@@ -65,6 +65,10 @@ export const ShareDialog = ({ open, onOpenChange }) => {
     });
   };
 
+  const handleCheckboxChange = (checked) => {
+    setIsPublicAccess(checked === true);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -179,7 +183,7 @@ export const ShareDialog = ({ open, onOpenChange }) => {
               <Checkbox
                 id="public-access"
                 checked={isPublicAccess}
-                onCheckedChange={setIsPublicAccess}
+                onCheckedChange={handleCheckboxChange}
               />
               <div className="grid gap-1.5">
                 <Label

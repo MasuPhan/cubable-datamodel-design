@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Menubar,
@@ -40,6 +39,20 @@ import {
 
 import { ShareDialog } from "@/components/ShareDialog";
 
+interface AppMenuProps {
+  onImport: () => void;
+  onExport: () => void;
+  onAddTable: () => void;
+  onAddArea: () => void;
+  onAddNote: () => void;
+  toggleFullscreen: () => void;
+  isFullscreen: boolean;
+  isGridVisible: boolean;
+  setIsGridVisible: (visible: boolean) => void;
+  isPaletteVisible: boolean;
+  setIsPaletteVisible: (visible: boolean) => void;
+}
+
 export const AppMenu = ({ 
   onImport, 
   onExport, 
@@ -52,7 +65,7 @@ export const AppMenu = ({
   setIsGridVisible,
   isPaletteVisible,
   setIsPaletteVisible,
-}) => {
+}: AppMenuProps) => {
   const { undo, redo, canUndo, canRedo } = useModelContext();
   const { toast } = useToast();
   const [isShareDialogOpen, setIsShareDialogOpen] = React.useState(false);

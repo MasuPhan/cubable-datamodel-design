@@ -6,6 +6,18 @@ import { useToast } from "@/hooks/use-toast";
 import { useModelContext } from "@/contexts/ModelContext";
 import { AppMenu } from "@/components/AppMenu";
 
+interface ModelHeaderProps {
+  isPaletteVisible: boolean;
+  setIsPaletteVisible: (visible: boolean) => void;
+  isGridVisible: boolean;
+  setIsGridVisible: (visible: boolean) => void;
+  toggleFullscreen: () => void;
+  isFullscreen: boolean;
+  onAddArea: () => void;
+  onAddNote: () => void;
+  onAddTable: () => void;
+}
+
 export const ModelHeader = ({ 
   isPaletteVisible, 
   setIsPaletteVisible, 
@@ -15,7 +27,8 @@ export const ModelHeader = ({
   isFullscreen,
   onAddArea,
   onAddNote,
-}) => {
+  onAddTable
+}: ModelHeaderProps) => {
   const { toast } = useToast();
   const { addTable, importModel, exportModel, canUndo, canRedo, undo, redo } = useModelContext();
   
@@ -67,26 +80,6 @@ export const ModelHeader = ({
     });
   };
   
-  const handleAddTable = () => {
-    addTable({
-      id: `table-${Date.now()}`,
-      name: "New Table",
-      fields: [
-        {
-          id: `field-${Date.now()}`,
-          name: "ID",
-          type: "id",
-          required: true,
-          unique: true,
-          isPrimary: true,
-          description: "Primary identifier for this record",
-          defaultValue: "",
-        }
-      ],
-      position: { x: 50, y: 50 },
-    });
-  };
-  
   const loadTemplate = (template) => {
     importModel(template);
     toast({
@@ -100,7 +93,7 @@ export const ModelHeader = ({
       <AppMenu
         onImport={handleImport}
         onExport={handleExport}
-        onAddTable={handleAddTable}
+        onAddTable={onAddTable}
         onAddArea={onAddArea}
         onAddNote={onAddNote}
         toggleFullscreen={toggleFullscreen}
