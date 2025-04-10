@@ -24,6 +24,7 @@ export interface Table {
   fields: Field[];
   position: { x: number; y: number };
   width?: number;
+  zIndex?: number;
 }
 
 export interface Relationship {
@@ -142,7 +143,6 @@ const saveHistory = (state: ModelState, tables: Table[], relationships: Relation
     notes: JSON.parse(JSON.stringify(notes)),
   });
   
-  // Limit history to 50 entries
   if (historyCopy.length > 50) {
     historyCopy.shift();
   }
@@ -164,10 +164,9 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
   switch (action.type) {
     case 'ADD_TABLE':
       console.log("ADD_TABLE reducer called with", action.payload);
-      // Ensure new tables have a default zIndex of 20
       const tableWithZIndex = {
         ...action.payload,
-        zIndex: 20 // Set default zIndex for tables
+        zIndex: 20
       };
       return saveHistory(
         state,
@@ -200,7 +199,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
           ? { ...table, position: action.payload.position }
           : table
       );
-      // Don't save history for position changes
       return {
         ...state,
         tables: updatedTables,
@@ -237,8 +235,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
       if (sourceTable) {
         const fieldToRemove = sourceTable.fields.find(f => f.id === action.payload.fieldId);
         
-        // If this is a reference field that's part of a two-way relationship,
-        // we need to remove the linked field in the other table too
         if (fieldToRemove && (fieldToRemove.type === 'reference' || fieldToRemove.type === 'referenceTwo') &&
             fieldToRemove.reference && fieldToRemove.reference.linkedFieldId) {
           const targetTableId = fieldToRemove.reference.tableId;
@@ -255,7 +251,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
           });
         }
         
-        // Update the source table to remove the field
         updatedTables = updatedTables.map(table => {
           if (table.id === action.payload.tableId) {
             return {
@@ -266,7 +261,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
           return table;
         });
         
-        // Remove relationships connected to this field
         updatedRelationships = updatedRelationships.filter(
           (rel) => 
             !(rel.sourceTableId === action.payload.tableId && rel.sourceFieldId === action.payload.fieldId) &&
@@ -288,12 +282,10 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
       
       if (!sourceTable || !targetTable) return state;
       
-      // Create unique IDs for the fields and relationship
       const sourceFieldId = `field-${Date.now()}-source`;
       const targetFieldId = `field-${Date.now()}-target`;
       const relationshipId = `rel-${Date.now()}`;
       
-      // Create the source field
       const sourceField: Field = {
         id: sourceFieldId,
         name: fieldName,
@@ -308,7 +300,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
         }
       };
       
-      // Update source table with the new field
       updatedTables = updatedTables.map(table => {
         if (table.id === sourceTableId) {
           return {
@@ -319,7 +310,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
         return table;
       });
       
-      // For two-way references, create the target field
       if (isTwoWay) {
         const targetField: Field = {
           id: targetFieldId,
@@ -330,12 +320,11 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
           reference: {
             tableId: sourceTableId,
             isTwoWay: true,
-            isMultiple: true, // Two-way references always allow multiple records
+            isMultiple: true,
             linkedFieldId: sourceFieldId
           }
         };
         
-        // Update target table with the new field
         updatedTables = updatedTables.map(table => {
           if (table.id === targetTableId) {
             return {
@@ -347,14 +336,12 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
         });
       }
       
-      // Create the relationship
       const relationship: Relationship = {
         id: relationshipId,
         sourceTableId,
         sourceFieldId,
         targetTableId,
         targetFieldId: isTwoWay ? targetFieldId : undefined,
-        // Determine the relationship type based on multiplicity
         type: isMultiple 
           ? (isTwoWay ? 'manyToMany' : 'oneToMany')
           : (isTwoWay ? 'manyToOne' : 'oneToOne'),
@@ -362,7 +349,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
         isTwoWay
       };
       
-      // Add the relationship
       updatedRelationships = [...updatedRelationships, relationship];
       
       return saveHistory(state, updatedTables, updatedRelationships, state.areas, state.notes);
@@ -391,7 +377,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
     
     case 'ADD_AREA': {
       console.log("ADD_AREA reducer called with", action.payload);
-      // Set default zIndex for new areas (should be lowest)
       const areaWithZIndex = {
         ...action.payload,
         zIndex: 10
@@ -423,7 +408,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
           ? { ...area, position: action.payload.position }
           : area
       );
-      // Don't save history for position changes
       return {
         ...state,
         areas: updatedAreas,
@@ -432,7 +416,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
     
     case 'ADD_NOTE': {
       console.log("ADD_NOTE reducer called with", action.payload);
-      // Set default zIndex for new notes (should be highest)
       const noteWithZIndex = {
         ...action.payload,
         zIndex: 30
@@ -464,7 +447,6 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
           ? { ...note, position: action.payload.position }
           : note
       );
-      // Don't save history for position changes
       return {
         ...state,
         notes: updatedNotes,
@@ -518,7 +500,7 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
       if (itemType === 'note') {
         updatedNotes = updatedNotes.map(n => {
           if (n.id === itemId) {
-            return { ...n, zIndex: Math.max((n.zIndex || 30) - 1, 21) }; // Don't go below tables
+            return { ...n, zIndex: Math.max((n.zIndex || 30) - 1, 21) };
           }
           return n;
         });
@@ -532,7 +514,7 @@ const modelReducer = (state: ModelState, action: ModelAction): ModelState => {
       } else if (itemType === 'table') {
         updatedTables = updatedTables.map(t => {
           if (t.id === itemId) {
-            return { ...t, zIndex: Math.max((t.zIndex || 20) - 1, 11) }; // Don't go below areas
+            return { ...t, zIndex: Math.max((t.zIndex || 20) - 1, 11) };
           }
           return t;
         });
