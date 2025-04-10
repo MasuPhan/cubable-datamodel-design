@@ -142,7 +142,11 @@ function SplashCursor({
       
       if (!isWebGL2) {
         gl = (canvas.getContext("webgl", params) ||
-          canvas.getContext("experimental-webgl", params)) as WebGLRenderingContext;
+          canvas.getContext("experimental-webgl", params)) as WebGLRenderingContext | null;
+      }
+      
+      if (!gl) {
+        throw new Error("WebGL not supported");
       }
       
       let halfFloat: any;
@@ -160,7 +164,7 @@ function SplashCursor({
       
       gl.clearColor(0.0, 0.0, 0.0, 1.0);
       const halfFloatTexType = isWebGL2
-        ? gl.HALF_FLOAT
+        ? (gl as WebGL2RenderingContext).HALF_FLOAT
         : halfFloat && halfFloat.HALF_FLOAT_OES;
       
       let formatRGBA;
