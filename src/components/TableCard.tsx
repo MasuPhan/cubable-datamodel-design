@@ -11,25 +11,46 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Pencil, MoreVertical, Trash2, Plus, GripVertical, Database, Copy, ArrowUp, ArrowDown } from "lucide-react";
+import { 
+  Pencil, 
+  MoreVertical, 
+  Trash2, 
+  Plus, 
+  GripVertical, 
+  Database, 
+  Copy, 
+  ArrowUp, 
+  ArrowDown,
+  ChevronDown,
+  ChevronUp 
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FieldRow } from "@/components/FieldRow";
 import { useModelContext } from "@/contexts/ModelContext";
 import { AddReferenceDialog } from "@/components/AddReferenceDialog";
 import { useToast } from "@/hooks/use-toast";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export const TableCard = ({ table, onDragEnd, scale, onMoveLayerUp, onMoveLayerDown }) => {
   const { toast } = useToast();
-  const { updateTableName, removeTable, addFieldToTable, addTable, updateField } = useModelContext();
+  const { updateTableName, removeTable, addFieldToTable, addTable, updateField, updateTable } = useModelContext();
   const [isEditing, setIsEditing] = useState(false);
   const [tableName, setTableName] = useState(table.name);
   const [isAddReferenceOpen, setIsAddReferenceOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(table.isCollapsed || false);
   
   // For resizing
   const resizeRef = useRef(null);
   const width = useMotionValue(table.width || 300);
-  const height = useMotionValue(table.height || (table.fields.length * 40 + 120));
+  const height = useMotionValue(table.height || (table.fields?.length * 40 + 120 || 120));
   const isResizing = useRef(false);
+  
+  // Update isCollapsed in the table object when it changes
+  useEffect(() => {
+    if (table.isCollapsed !== isCollapsed) {
+      updateTable(table.id, { ...table, isCollapsed });
+    }
+  }, [isCollapsed, table, updateTable]);
   
   // Listen for reference dialog open events
   useEffect(() => {
@@ -68,10 +89,10 @@ export const TableCard = ({ table, onDragEnd, scale, onMoveLayerUp, onMoveLayerD
   
   const handleDuplicate = () => {
     const newTableId = `table-${Date.now()}`;
-    const newFields = table.fields.map(field => ({
+    const newFields = table.fields?.map(field => ({
       ...field,
       id: `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    }));
+    })) || [];
     
     addTable({
       id: newTableId,
@@ -79,6 +100,7 @@ export const TableCard = ({ table, onDragEnd, scale, onMoveLayerUp, onMoveLayerD
       fields: newFields,
       position: { x: table.position.x + 30, y: table.position.y + 30 },
       width: width.get(),
+      isCollapsed: isCollapsed,
     });
     
     toast({
@@ -122,13 +144,12 @@ export const TableCard = ({ table, onDragEnd, scale, onMoveLayerUp, onMoveLayerD
     };
     
     // Update the table dimensions in the context
-    // This function should be defined in your ModelContext
     table.width = dimensions.width;
     table.height = dimensions.height;
   };
 
   const handleMoveFieldUp = (index) => {
-    if (index > 0) {
+    if (index > 0 && table.fields && table.fields.length > 1) {
       const fields = [...table.fields];
       const temp = fields[index - 1];
       fields[index - 1] = fields[index];
@@ -139,7 +160,7 @@ export const TableCard = ({ table, onDragEnd, scale, onMoveLayerUp, onMoveLayerD
   };
 
   const handleMoveFieldDown = (index) => {
-    if (index < table.fields.length - 1) {
+    if (table.fields && index < table.fields.length - 1) {
       const fields = [...table.fields];
       const temp = fields[index + 1];
       fields[index + 1] = fields[index];
@@ -169,6 +190,19 @@ export const TableCard = ({ table, onDragEnd, scale, onMoveLayerUp, onMoveLayerD
       document.removeEventListener('mouseup', handleDocumentMouseUp);
     };
   }, [scale]); // Add scale as a dependency
+  
+  const handleAddField = () => {
+    addFieldToTable(table.id, {
+      id: `field-${Date.now()}`,
+      name: "New Field",
+      type: "text",
+      required: false,
+      unique: false,
+      isPrimary: false,
+      description: "",
+      defaultValue: "",
+    });
+  };
 
   return (
     <motion.div
@@ -212,6 +246,20 @@ export const TableCard = ({ table, onDragEnd, scale, onMoveLayerUp, onMoveLayerD
             </CardTitle>
           )}
           
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            aria-label={isCollapsed ? "Expand table" : "Collapse table"}
+          >
+            {isCollapsed ? (
+              <ChevronDown size={14} />
+            ) : (
+              <ChevronUp size={14} />
+            )}
+          </Button>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -226,6 +274,19 @@ export const TableCard = ({ table, onDragEnd, scale, onMoveLayerUp, onMoveLayerD
               <DropdownMenuItem onClick={handleDuplicate}>
                 <Copy size={14} className="mr-2" />
                 Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsCollapsed(!isCollapsed)}>
+                {isCollapsed ? (
+                  <>
+                    <ChevronDown size={14} className="mr-2" />
+                    Expand Table
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp size={14} className="mr-2" />
+                    Collapse Table
+                  </>
+                )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onMoveLayerUp(table.id)}>
@@ -245,54 +306,53 @@ export const TableCard = ({ table, onDragEnd, scale, onMoveLayerUp, onMoveLayerD
           </DropdownMenu>
         </CardHeader>
         
-        <CardContent className="p-0">
-          <div className="max-h-[300px] overflow-y-auto scrollbar-thin">
-            {table.fields.map((field, index) => (
-              <FieldRow
-                key={field.id}
-                field={field}
-                tableId={table.id}
-                isLast={index === table.fields.length - 1}
-                fieldIndex={index}
-                onMoveUp={handleMoveFieldUp}
-                onMoveDown={handleMoveFieldDown}
-              />
-            ))}
-          </div>
-          
-          <div className="p-2 flex bg-slate-50 border-t border-slate-100">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 text-xs h-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-              onClick={() => {
-                addFieldToTable(table.id, {
-                  id: `field-${Date.now()}`,
-                  name: "New Field",
-                  type: "text",
-                  required: false,
-                  unique: false,
-                  isPrimary: false,
-                  description: "",
-                  defaultValue: "",
-                });
-              }}
-            >
-              <Plus size={14} className="mr-1" />
-              Add Field
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 text-xs h-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-l border-slate-200"
-              onClick={() => setIsAddReferenceOpen(true)}
-            >
-              <Database size={14} className="mr-1" />
-              Add Reference
-            </Button>
-          </div>
-        </CardContent>
+        <Collapsible open={!isCollapsed} onOpenChange={(open) => setIsCollapsed(!open)}>
+          <CollapsibleContent>
+            <CardContent className="p-0">
+              <div className="max-h-[300px] overflow-y-auto scrollbar-thin">
+                {table.fields && table.fields.length > 0 ? (
+                  table.fields.map((field, index) => (
+                    <FieldRow
+                      key={field.id}
+                      field={field}
+                      tableId={table.id}
+                      isLast={index === table.fields.length - 1}
+                      fieldIndex={index}
+                      onMoveUp={handleMoveFieldUp}
+                      onMoveDown={handleMoveFieldDown}
+                    />
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-gray-500 text-sm">
+                    No fields in this table yet.
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-2 flex bg-slate-50 border-t border-slate-100">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 text-xs h-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                  onClick={handleAddField}
+                >
+                  <Plus size={14} className="mr-1" />
+                  Add Field
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 text-xs h-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-l border-slate-200"
+                  onClick={() => setIsAddReferenceOpen(true)}
+                >
+                  <Database size={14} className="mr-1" />
+                  Add Reference
+                </Button>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
       </Card>
       
       {/* Resize handle */}

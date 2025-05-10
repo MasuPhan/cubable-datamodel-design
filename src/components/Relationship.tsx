@@ -1,7 +1,7 @@
 
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowRight, ArrowLeftRight } from "lucide-react";
+import { ArrowRight, ArrowLeftRight, CornerDownRight, CornerUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -21,32 +21,91 @@ export const Relationship = ({ relationship, tables }) => {
   const sourceWidth = sourceTable.width || 300;
   const targetWidth = targetTable.width || 300;
   
+  // Get the collapsed state of tables if it exists
+  const sourceCollapsed = sourceTable.isCollapsed || false;
+  const targetCollapsed = targetTable.isCollapsed || false;
+  
+  // Calculate table heights based on fields and collapsed state
+  const sourceHeight = sourceCollapsed ? 50 : (sourceTable.fields.length * 40 + 80);
+  const targetHeight = targetCollapsed ? 50 : (targetTable.fields.length * 40 + 80);
+  
+  // Calculate source and target center positions
   const sourceCenter = {
     x: sourcePos.x + sourceWidth / 2,
-    y: sourcePos.y + 40,  // Approximate half of table header height
+    y: sourcePos.y + sourceHeight / 2,
   };
   
   const targetCenter = {
     x: targetPos.x + targetWidth / 2,
-    y: targetPos.y + 40,  // Approximate half of table header height
+    y: targetPos.y + targetHeight / 2,
   };
 
-  // Calculate path
-  const dx = targetCenter.x - sourceCenter.x;
-  const dy = targetCenter.y - sourceCenter.y;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  
-  if (distance === 0) return null;
-  
+  // Calculate midpoints for orthogonal path
   const midX = (sourceCenter.x + targetCenter.x) / 2;
-  const midY = (sourceCenter.y + targetCenter.y) / 2;
   
-  // Add some curvature to the path
-  const curvature = 0.2;
-  const controlPoint = {
-    x: midX + curvature * dy,
-    y: midY - curvature * dx
-  };
+  // Create orthogonal path
+  const path = useMemo(() => {
+    // Determine which sides of the tables to connect
+    const sourceLeft = sourcePos.x;
+    const sourceRight = sourcePos.x + sourceWidth;
+    const sourceTop = sourcePos.y;
+    const sourceBottom = sourcePos.y + sourceHeight;
+
+    const targetLeft = targetPos.x;
+    const targetRight = targetPos.x + targetWidth;
+    const targetTop = targetPos.y;
+    const targetBottom = targetPos.y + targetHeight;
+    
+    // Determine if horizontal or vertical connection makes more sense
+    const horizontalDistance = Math.abs(sourceCenter.x - targetCenter.x);
+    const verticalDistance = Math.abs(sourceCenter.y - targetCenter.y);
+    
+    // Points for the path
+    let points = [];
+    
+    // Choose horizontal or vertical as the main direction based on distance
+    if (horizontalDistance > verticalDistance) {
+      // Horizontal arrangement - connect sides
+      if (sourceCenter.x < targetCenter.x) {
+        // Source is to the left of target
+        points = [
+          { x: sourceRight, y: sourceCenter.y },
+          { x: midX, y: sourceCenter.y },
+          { x: midX, y: targetCenter.y },
+          { x: targetLeft, y: targetCenter.y }
+        ];
+      } else {
+        // Source is to the right of target
+        points = [
+          { x: sourceLeft, y: sourceCenter.y },
+          { x: midX, y: sourceCenter.y },
+          { x: midX, y: targetCenter.y },
+          { x: targetRight, y: targetCenter.y }
+        ];
+      }
+    } else {
+      // Vertical arrangement - connect top/bottom
+      if (sourceCenter.y < targetCenter.y) {
+        // Source is above target
+        points = [
+          { x: sourceCenter.x, y: sourceBottom },
+          { x: sourceCenter.x, y: (sourceBottom + targetTop) / 2 },
+          { x: targetCenter.x, y: (sourceBottom + targetTop) / 2 },
+          { x: targetCenter.x, y: targetTop }
+        ];
+      } else {
+        // Source is below target
+        points = [
+          { x: sourceCenter.x, y: sourceTop },
+          { x: sourceCenter.x, y: (targetBottom + sourceTop) / 2 },
+          { x: targetCenter.x, y: (targetBottom + sourceTop) / 2 },
+          { x: targetCenter.x, y: targetBottom }
+        ];
+      }
+    }
+    
+    return points;
+  }, [sourcePos, targetPos, sourceWidth, targetWidth, sourceHeight, targetHeight]);
   
   const sourceField = sourceTable.fields.find(f => f.id === relationship.sourceFieldId);
   const targetField = relationship.targetFieldId 
@@ -73,6 +132,16 @@ export const Relationship = ({ relationship, tables }) => {
     
     return `${sourceTable.name}.${sourceFieldName} → ${targetTable.name}.${targetFieldName}`;
   };
+
+  // Generate SVG path string from points
+  const pathString = path.length > 0 ? 
+    `M${path[0].x},${path[0].y} L${path[1].x},${path[1].y} L${path[2].x},${path[2].y} L${path[3].x},${path[3].y}` : '';
+
+  // Find appropriate position for the relationship label
+  const labelPosition = path.length > 1 ? {
+    x: (path[1].x + path[2].x) / 2 - 60,
+    y: (path[1].y + path[2].y) / 2 - 15
+  } : { x: 0, y: 0 };
 
   const pathId = `path-${relationship.id}`;
 
@@ -107,10 +176,10 @@ export const Relationship = ({ relationship, tables }) => {
           )}
         </defs>
         
-        {/* Main relationship line */}
+        {/* Orthogonal relationship line */}
         <path
           id={pathId}
-          d={`M${sourceCenter.x},${sourceCenter.y} Q${controlPoint.x},${controlPoint.y} ${targetCenter.x},${targetCenter.y}`}
+          d={pathString}
           stroke="currentColor"
           strokeWidth="2"
           strokeDasharray={relationship.isReference ? "0" : "4"} 
@@ -123,8 +192,8 @@ export const Relationship = ({ relationship, tables }) => {
         
         <TooltipProvider>
           <foreignObject
-            x={midX - 60}
-            y={midY - 15}
+            x={labelPosition.x}
+            y={labelPosition.y}
             width="120" 
             height="30"
           >
@@ -142,7 +211,7 @@ export const Relationship = ({ relationship, tables }) => {
                     <span className="mr-1">
                       {relationship.isTwoWay 
                         ? <ArrowLeftRight className="inline-block w-3 h-3 mr-1" /> 
-                        : <ArrowRight className="inline-block w-3 h-3 mr-1" />}
+                        : <CornerDownRight className="inline-block w-3 h-3 mr-1" />}
                     </span>
                     {relationship.isReference 
                       ? (relationship.isTwoWay ? "Two-way Ref" : "One-way Ref") 

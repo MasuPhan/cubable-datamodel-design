@@ -1,3 +1,4 @@
+
 import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TableCard } from "@/components/TableCard";
@@ -39,6 +40,12 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
   const [isPanning, setIsPanning] = useState(false);
   const [startPanPos, setStartPanPos] = useState({ x: 0, y: 0 });
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
+  
+  // Enlarged canvas size (doubled from the original 600vh to 1200vh)
+  const canvasSize = {
+    width: "1200vw",
+    height: "1200vh"
+  };
   
   useEffect(() => {
     setIsPaletteCollapsed(!isPaletteVisible);
@@ -134,7 +141,7 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
       const tableLeft = table.position.x;
       const tableRight = table.position.x + (table.width || 300);
       const tableTop = table.position.y;
-      const tableBottom = table.position.y + 40 + table.fields.length * 40; // Approximate height
+      const tableBottom = table.position.y + 40 + (table.fields?.length || 0) * 40; // Approximate height
       
       return x >= tableLeft && x <= tableRight && y >= tableTop && y <= tableBottom;
     });
@@ -363,21 +370,22 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
             "absolute inset-0 transition-opacity", 
             isDraggingField && "bg-blue-100 bg-opacity-30"
           )}
-          style={{ minHeight: "600vh", minWidth: "600vw" }}
+          style={{ minHeight: canvasSize.height, minWidth: canvasSize.width }}
         >
           <div 
             className="absolute w-full h-full"
             style={{
               transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
               transformOrigin: "0 0",
-              minHeight: "600vh",
-              minWidth: "600vw"
+              minHeight: canvasSize.height,
+              minWidth: canvasSize.width
             }}
           >
             {isGridVisible && (
-              <div className="absolute inset-0 grid grid-cols-[repeat(300,20px)] grid-rows-[repeat(300,20px)] opacity-20" style={{ width: "600vw", height: "600vh" }}>
-                {Array.from({ length: 300 }).map((_, row) => (
-                  Array.from({ length: 300 }).map((_, col) => (
+              <div className="absolute inset-0 grid grid-cols-[repeat(600,20px)] grid-rows-[repeat(600,20px)] opacity-20" style={{ width: canvasSize.width, height: canvasSize.height }}>
+                {/* Grid is now larger: 600x600 grid cells instead of 300x300 */}
+                {Array.from({ length: 600 }).map((_, row) => (
+                  Array.from({ length: 600 }).map((_, col) => (
                     <div 
                       key={`${row}-${col}`}
                       className="border-[0.5px] border-slate-300"
