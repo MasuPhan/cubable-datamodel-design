@@ -1,5 +1,5 @@
 
-import { Program, Material } from './types';
+import { Program, Material } from './renderer-utils';
 import { compileShader } from './renderer-utils';
 import {
   baseVertexShader,

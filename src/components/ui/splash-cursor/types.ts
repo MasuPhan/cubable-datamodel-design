@@ -5,6 +5,8 @@ export interface RGB {
   b: number;
 }
 
+// These interfaces now only define the expected shape of Program and Material
+// The actual implementations are in renderer-utils.ts
 export interface Material {
   vertexShader: any;
   fragmentShaderSource: string;
