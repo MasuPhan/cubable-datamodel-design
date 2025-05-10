@@ -85,6 +85,7 @@ export const useCanvasControls = (initialScale = 1) => {
   return {
     scale,
     position,
+    setPosition, // Expose setPosition for external control
     isPanning,
     handleWheel,
     handleMouseDown,

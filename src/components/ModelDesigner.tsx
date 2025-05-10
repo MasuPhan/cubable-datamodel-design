@@ -9,6 +9,7 @@ import { AddItemControls } from "@/components/designer/AddItemControls";
 import { PaletteSidebar } from "@/components/designer/PaletteSidebar";
 import { DesignerCanvas } from "@/components/designer/DesignerCanvas";
 import { DesignerContent } from "@/components/designer/DesignerContent";
+import { LeftSidebar } from "@/components/designer/LeftSidebar";
 
 export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen }) => {
   const { toast } = useToast();
@@ -45,13 +46,77 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
     handleMouseUp,
     zoomIn,
     zoomOut,
-    resetView
+    resetView,
+    setPosition
   } = useCanvasControls();
   
   // Enlarged canvas size (doubled from the original 600vh to 1200vh)
   const canvasSize = {
     width: "1200vw",
     height: "1200vh"
+  };
+  
+  // Handle focus on all elements
+  const handleFocusElements = () => {
+    if (tables.length === 0 && notes.length === 0 && areas.length === 0) {
+      toast({
+        title: "Nothing to focus",
+        description: "There are no elements on the canvas to focus on."
+      });
+      return;
+    }
+    
+    // Calculate the bounding box of all elements
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    
+    // Include tables in calculation
+    tables.forEach(table => {
+      const tableWidth = table.width || 300;
+      const tableHeight = 40 + (table.fields?.length || 0) * 40; // Approximate height
+      
+      minX = Math.min(minX, table.position.x);
+      minY = Math.min(minY, table.position.y);
+      maxX = Math.max(maxX, table.position.x + tableWidth);
+      maxY = Math.max(maxY, table.position.y + tableHeight);
+    });
+    
+    // Include notes in calculation
+    notes.forEach(note => {
+      minX = Math.min(minX, note.position.x);
+      minY = Math.min(minY, note.position.y);
+      maxX = Math.max(maxX, note.position.x + (note.width || 200));
+      maxY = Math.max(maxY, note.position.y + (note.height || 150));
+    });
+    
+    // Include areas in calculation
+    areas.forEach(area => {
+      minX = Math.min(minX, area.position.x);
+      minY = Math.min(minY, area.position.y);
+      maxX = Math.max(maxX, area.position.x + (area.width || 300));
+      maxY = Math.max(maxY, area.position.y + (area.height || 200));
+    });
+    
+    // Calculate the center of the bounding box
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    
+    // Calculate the canvas center
+    const canvasCenterX = window.innerWidth / 2;
+    const canvasCenterY = window.innerHeight / 2;
+    
+    // Set the position to center the elements
+    setPosition({
+      x: canvasCenterX - centerX * scale,
+      y: canvasCenterY - centerY * scale
+    });
+    
+    toast({
+      title: "Elements focused",
+      description: "All elements are now centered in the view."
+    });
   };
   
   // Handle field drop on table
@@ -200,6 +265,9 @@ export const ModelDesigner = ({ isPaletteVisible, isGridVisible, isFullscreen })
         onZoomOut={zoomOut} 
         onReset={resetView} 
       />
+      
+      {/* Left Sidebar - New component */}
+      <LeftSidebar onFocusElements={handleFocusElements} />
       
       {/* Add note/area buttons */}
       <div className="absolute top-28 left-4 z-30">
