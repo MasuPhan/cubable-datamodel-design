@@ -27,6 +27,15 @@ interface ModelContextType {
   updateNotePosition: (id: string, position: { x: number; y: number }) => void;
   moveLayerUp: (itemId: string, type: 'table' | 'area' | 'note') => void;
   moveLayerDown: (itemId: string, type: 'table' | 'area' | 'note') => void;
+  
+  // Add the missing properties/methods
+  createReferenceField: (sourceTableId: string, targetTableId: string, fieldName: string, isTwoWay: boolean, isMultiple: boolean) => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  importModel: (data: any) => void;
+  exportModel: () => any;
 }
 
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
@@ -40,6 +49,8 @@ export const ModelProvider: React.FC<ModelProviderProps> = ({ children }) => {
   const [relationships, setRelationships] = useState<Relationship[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
 
   const addTable = (table: Table) => {
     setTables(prevTables => [...prevTables, table]);
@@ -245,6 +256,107 @@ export const ModelProvider: React.FC<ModelProviderProps> = ({ children }) => {
     }
   };
 
+  const createReferenceField = (sourceTableId: string, targetTableId: string, fieldName: string, isTwoWay: boolean, isMultiple: boolean) => {
+    const refId = `ref-${Date.now()}`;
+    const sourceField = {
+      id: `field-${Date.now()}-src`,
+      name: fieldName,
+      type: isTwoWay ? 'referenceTwo' : 'reference',
+      required: false,
+      unique: false,
+      isPrimary: false,
+      description: `Reference to ${targetTableId}`,
+      defaultValue: '',
+    };
+    
+    // Add the field to source table
+    addFieldToTable(sourceTableId, sourceField);
+    
+    // Create the relationship
+    addRelationship({
+      id: refId,
+      sourceTableId,
+      sourceFieldId: sourceField.id,
+      targetTableId,
+      isReference: true,
+      isTwoWay
+    });
+    
+    // If it's a two-way reference, add the corresponding field to the target table
+    if (isTwoWay) {
+      const targetTable = tables.find(t => t.id === targetTableId);
+      if (targetTable) {
+        const sourceTable = tables.find(t => t.id === sourceTableId);
+        if (sourceTable) {
+          const targetField = {
+            id: `field-${Date.now()}-target`,
+            name: sourceTable.name,
+            type: 'referenceTwo',
+            required: false,
+            unique: false,
+            isPrimary: false,
+            description: `Reference to ${sourceTableId}`,
+            defaultValue: '',
+          };
+          
+          addFieldToTable(targetTableId, targetField);
+        }
+      }
+    }
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      const previousState = history[historyIndex - 1];
+      setTables(previousState.tables);
+      setRelationships(previousState.relationships);
+      setAreas(previousState.areas);
+      setNotes(previousState.notes);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      const nextState = history[historyIndex + 1];
+      setTables(nextState.tables);
+      setRelationships(nextState.relationships);
+      setAreas(nextState.areas);
+      setNotes(nextState.notes);
+    }
+  };
+  
+  const importModel = (data: any) => {
+    if (data.tables) setTables(data.tables);
+    if (data.relationships) setRelationships(data.relationships);
+    if (data.areas) setAreas(data.areas);
+    if (data.notes) setNotes(data.notes);
+    
+    // Add to history
+    const newState = {
+      tables: data.tables || [],
+      relationships: data.relationships || [],
+      areas: data.areas || [],
+      notes: data.notes || []
+    };
+    
+    setHistory([...history.slice(0, historyIndex + 1), newState]);
+    setHistoryIndex(historyIndex + 1);
+  };
+  
+  const exportModel = () => {
+    return {
+      tables,
+      relationships,
+      areas,
+      notes
+    };
+  };
+  
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
+
   const value: ModelContextType = {
     tables,
     relationships,
@@ -270,7 +382,14 @@ export const ModelProvider: React.FC<ModelProviderProps> = ({ children }) => {
     updateNote,
     updateNotePosition,
     moveLayerUp,
-    moveLayerDown
+    moveLayerDown,
+    createReferenceField,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    importModel,
+    exportModel
   };
 
   return (

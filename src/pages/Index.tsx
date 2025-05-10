@@ -95,7 +95,9 @@ const Index = () => {
           type: "id",
           required: true,
           isPrimary: true,
-          unique: true
+          unique: true,
+          description: "Primary identifier", // Added the missing description
+          defaultValue: "" // Added the missing defaultValue
         }
       ],
       position: { x: centerX, y: centerY },
